@@ -1,0 +1,35 @@
+syntax = "proto3";
+option go_package = ".;pb";
+
+package zenly;
+
+import "google/protobuf/timestamp.proto";
+
+service Zenly {
+  rpc Publish(stream PublishRequest) returns (PublishResponse) {}
+  rpc Subscribe(SubscribeRequest) returns (stream SubscribeResponse) {}
+}
+
+message GeoLocation {
+  double lat = 1;
+  double lng = 2;
+  google.protobuf.Timestamp created_at = 3;
+}
+
+message PublishRequest {
+  int32 user_id = 1;
+  GeoLocation geo_location = 2;
+}
+
+message PublishResponse {
+  bool success = 1;
+}
+
+message SubscribeRequest {
+  repeated int32 user_id = 1;
+}
+
+message SubscribeResponse {
+  int32 user_id = 1;
+  GeoLocation geo_location = 2;
+}
