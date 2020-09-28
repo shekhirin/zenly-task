@@ -3,6 +3,7 @@ package zenly
 import (
 	"context"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/shekhirin/zenly-task/internal/pb"
 	"github.com/shekhirin/zenly-task/internal/zenly/bus"
 	"github.com/shekhirin/zenly-task/internal/zenly/enricher"
@@ -23,14 +24,16 @@ var DefaultEnrichers = []enricher.Enricher{
 }
 
 type Server struct {
-	bus       bus.Bus
-	enrichers []enricher.Enricher
+	bus            bus.Bus
+	enricherTimeMS *prometheus.HistogramVec
+	enrichers      []enricher.Enricher
 }
 
-func NewServer(bus bus.Bus, enrichers []enricher.Enricher) *Server {
+func NewServer(bus bus.Bus, enricherTimeMS *prometheus.HistogramVec, enrichers []enricher.Enricher) *Server {
 	return &Server{
-		bus:       bus,
-		enrichers: enrichers,
+		bus:            bus,
+		enricherTimeMS: enricherTimeMS,
+		enrichers:      enrichers,
 	}
 }
 
@@ -85,6 +88,8 @@ func (s *Server) Publish(stream pb.Zenly_PublishServer) error {
 					enrich := enricher.Enrich(payload)
 					elapsed := time.Since(start)
 
+					s.enricherTimeMS.With(prometheus.Labels{"enricher": enricher.String()}).Observe(float64(elapsed.Milliseconds()))
+
 					debugString := fmt.Sprintf("%s took %s\n", enricher.String(), elapsed.String())
 
 					if ctx.Err() != nil {
@@ -131,7 +136,12 @@ func (s *Server) Subscribe(request *pb.SubscribeRequest, stream pb.Zenly_Subscri
 	for {
 		select {
 		case <-stream.Context().Done():
-			return stream.Context().Err()
+			switch stream.Context().Err() {
+			case context.Canceled:
+				return nil
+			default:
+				return err
+			}
 		case message := <-ch:
 			subscribeResponse := &pb.SubscribeResponse{
 				UserId:      message.UserId,
