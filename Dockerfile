@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o /go/bin/zenly .
+RUN go build -o /go/bin/zenly ./cmd/zenly/
 
 FROM alpine:3.12
 

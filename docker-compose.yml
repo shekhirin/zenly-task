@@ -3,6 +3,6 @@ version: '3'
 services:
   zenly:
     build: .
-    command: "./zenly"
+    command: "./zenly -nats-addr=nats:4222"
     ports:
     - 8080:8080

@@ -1,0 +1,13 @@
+syntax = "proto3";
+option go_package = "github.com/shekhirin/zenly-task/internal/pb/enrichers";
+
+package enrichers;
+
+message PersonalPlace {
+  enum Type {
+    PERSONAL_PLACE_HOME = 0;
+    PERSONAL_PLACE_WORK = 1;
+    PERSONAL_PLACE_SCHOOL = 2;
+  }
+  Type type = 1;
+}

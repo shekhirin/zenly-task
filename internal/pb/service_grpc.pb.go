@@ -35,7 +35,7 @@ var zenlyPublishStreamDesc = &grpc.StreamDesc{
 }
 
 func (c *zenlyClient) Publish(ctx context.Context, opts ...grpc.CallOption) (Zenly_PublishClient, error) {
-	stream, err := c.cc.NewStream(ctx, zenlyPublishStreamDesc, "/zenly.Zenly/Publish", opts...)
+	stream, err := c.cc.NewStream(ctx, zenlyPublishStreamDesc, "/proto.Zenly/Publish", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ var zenlySubscribeStreamDesc = &grpc.StreamDesc{
 }
 
 func (c *zenlyClient) Subscribe(ctx context.Context, in *SubscribeRequest, opts ...grpc.CallOption) (Zenly_SubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, zenlySubscribeStreamDesc, "/zenly.Zenly/Subscribe", opts...)
+	stream, err := c.cc.NewStream(ctx, zenlySubscribeStreamDesc, "/proto.Zenly/Subscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func RegisterZenlyService(s grpc.ServiceRegistrar, srv *ZenlyService) {
 		}
 	}
 	sd := grpc.ServiceDesc{
-		ServiceName: "zenly.Zenly",
+		ServiceName: "proto.Zenly",
 		Methods:     []grpc.MethodDesc{},
 		Streams: []grpc.StreamDesc{
 			{
@@ -188,7 +188,7 @@ func RegisterZenlyService(s grpc.ServiceRegistrar, srv *ZenlyService) {
 				ServerStreams: true,
 			},
 		},
-		Metadata: "pb/zenly.proto",
+		Metadata: "service.proto",
 	}
 
 	s.RegisterService(&sd, nil)

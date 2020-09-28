@@ -14,7 +14,7 @@
     </EXTENSION>
     <kind value="PACKAGE" />
     <filePath value="$PROJECT_DIR$/main.go" />
-    <package value="github.com/shekhirin/zenly-task" />
+    <package value="github.com/shekhirin/zenly-task/cmd/zenly" />
     <directory value="$PROJECT_DIR$" />
     <method v="2" />
   </configuration>

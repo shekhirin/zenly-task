@@ -1,0 +1,13 @@
+syntax = "proto3";
+option go_package = "github.com/shekhirin/zenly-task/internal/pb/enrichers";
+
+package enrichers;
+
+message Transport {
+  enum Type {
+    TRANSPORT_CAR = 0;
+    TRANSPORT_TRAIN = 1;
+    TRANSPORT_PLANE = 2;
+  }
+  Type type = 1;
+}

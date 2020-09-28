@@ -1,19 +1,13 @@
 syntax = "proto3";
-option go_package = ".;pb";
+option go_package = "github.com/shekhirin/zenly-task/internal/pb";
 
-package zenly;
+package proto;
 
-import "google/protobuf/timestamp.proto";
+import "geo_location.proto";
 
 service Zenly {
   rpc Publish(stream PublishRequest) returns (PublishResponse) {}
   rpc Subscribe(SubscribeRequest) returns (stream SubscribeResponse) {}
-}
-
-message GeoLocation {
-  double lat = 1;
-  double lng = 2;
-  google.protobuf.Timestamp created_at = 3;
 }
 
 message PublishRequest {
@@ -31,5 +25,5 @@ message SubscribeRequest {
 
 message SubscribeResponse {
   int32 user_id = 1;
-  GeoLocation geo_location = 2;
+  GeoLocationEnriched geo_location = 2;
 }
