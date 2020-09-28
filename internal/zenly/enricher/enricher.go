@@ -1,10 +1,17 @@
 package enricher
 
 import (
+	"fmt"
 	"github.com/shekhirin/zenly-task/internal/pb"
+	"math/rand"
+	"time"
 )
 
+const minIOSimulation = 1 * time.Millisecond
+const maxIOSimulation = 100 * time.Millisecond
+
 type Enricher interface {
+	fmt.Stringer
 	Enrich(payload Payload) SetFunc // Pass Payload by value to prevent modification
 }
 
@@ -17,12 +24,6 @@ type Payload struct {
 
 type SetFunc func(gle *pb.GeoLocationEnriched)
 
-func EnrichChannel(enricher Enricher, payload Payload) <-chan SetFunc {
-	ch := make(chan SetFunc, 1)
-
-	go func() {
-		ch <- enricher.Enrich(payload)
-	}()
-
-	return ch
+func simulateIO() {
+	time.Sleep(time.Duration(rand.Intn(int(minIOSimulation+maxIOSimulation)) + int(minIOSimulation)))
 }

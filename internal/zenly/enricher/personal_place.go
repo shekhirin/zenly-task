@@ -19,7 +19,13 @@ func (e personalPlace) Enrich(payload Payload) SetFunc {
 
 	personalPlace.Type = enrichers.PersonalPlace_Type(rand.Intn(maxPersonalPlaceType))
 
+	simulateIO()
+
 	return func(gle *pb.GeoLocationEnriched) {
 		gle.PersonalPlace = &personalPlace
 	}
+}
+
+func (e personalPlace) String() string {
+	return "personal_place"
 }

@@ -19,7 +19,13 @@ func (e transport) Enrich(payload Payload) SetFunc {
 
 	transport.Type = enrichers.Transport_Type(rand.Intn(maxTransportType))
 
+	simulateIO()
+
 	return func(gle *pb.GeoLocationEnriched) {
 		gle.Transport = &transport
 	}
+}
+
+func (e transport) String() string {
+	return "transport"
 }

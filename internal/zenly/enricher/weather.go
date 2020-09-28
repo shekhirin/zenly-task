@@ -19,7 +19,13 @@ func (e weather) Enrich(payload Payload) SetFunc {
 
 	weather.Temperature = e.service.Temperature(payload.Lat, payload.Lng)
 
+	simulateIO()
+
 	return func(gle *pb.GeoLocationEnriched) {
 		gle.Weather = &weather
 	}
+}
+
+func (e weather) String() string {
+	return "weather"
 }

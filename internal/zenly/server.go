@@ -2,10 +2,13 @@ package zenly
 
 import (
 	"context"
+	"fmt"
 	"github.com/shekhirin/zenly-task/internal/pb"
 	"github.com/shekhirin/zenly-task/internal/zenly/bus"
 	"github.com/shekhirin/zenly-task/internal/zenly/enricher"
 	weatherService "github.com/shekhirin/zenly-task/internal/zenly/service/weather"
+	log "github.com/sirupsen/logrus"
+	"go.uber.org/atomic"
 	"io"
 	"sync"
 	"time"
@@ -37,6 +40,7 @@ func (s *Server) Service() *pb.ZenlyService {
 		Subscribe: s.Subscribe,
 	}
 }
+
 func (s *Server) Publish(stream pb.Zenly_PublishServer) error {
 	for {
 		publishRequest, err := stream.Recv()
@@ -61,27 +65,50 @@ func (s *Server) Publish(stream pb.Zenly_PublishServer) error {
 			Lng:    publishRequest.GeoLocation.Lng,
 		}
 
-		wg := sync.WaitGroup{}
+		var completed atomic.Int32
+
+		var wg sync.WaitGroup
 		wg.Add(len(s.enrichers))
+		waitCh := make(chan struct{})
 
-		for _, serverEnricher := range s.enrichers {
-			go func(targetEnricher enricher.Enricher) {
-				ctx, cancel := context.WithTimeout(context.Background(), EnricherTimeout)
-				defer cancel()
-				defer wg.Done()
+		ctx, _ := context.WithTimeout(context.Background(), EnricherTimeout)
 
-				// Don't give control of the context to enricher because of the possibility of forgetting
-				// to check timeout before setting the submessage inside the enricher
-				select {
-				case <-ctx.Done():
-					return
-				case enrich := <-enricher.EnrichChannel(targetEnricher, payload):
+		go func() {
+			for _, serverEnricher := range s.enrichers {
+				go func(enricher enricher.Enricher) {
+					defer wg.Done()
+
+					start := time.Now()
+
+					// Don't give control of the context to enricher because of the possibility of forgetting
+					// to check timeout before setting the submessage inside the enricher
+					enrich := enricher.Enrich(payload)
+					elapsed := time.Since(start)
+
+					debugString := fmt.Sprintf("%s took %s\n", enricher.String(), elapsed.String())
+
+					if ctx.Err() != nil {
+						log.WithField("enriched", false).Debug(debugString)
+						return
+					}
+
+					log.WithField("enriched", true).Debug(debugString)
 					enrich(&geoLocationEnriched)
-				}
-			}(serverEnricher)
-		}
 
-		wg.Wait()
+					completed.Inc()
+				}(serverEnricher)
+			}
+
+			wg.Wait()
+			close(waitCh)
+		}()
+
+		select {
+		case <-ctx.Done():
+			log.Debugf("%d enrichers completed", completed.Load())
+		case <-waitCh:
+			log.Debugf("all enrichers completed")
+		}
 
 		message := &pb.BusMessage{
 			UserId:      publishRequest.UserId,
