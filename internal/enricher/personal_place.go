@@ -1,7 +1,6 @@
 package enricher
 
 import (
-	"context"
 	"github.com/shekhirin/zenly-task/internal/pb"
 	"github.com/shekhirin/zenly-task/internal/pb/enrichers"
 	"math/rand"
@@ -9,21 +8,18 @@ import (
 
 const maxPersonalPlaceType = int(enrichers.PersonalPlace_PERSONAL_PLACE_SCHOOL)
 
-type personalPlaceEnricher struct{}
+type personalPlace struct{}
 
 func NewPersonalPlace() Enricher {
-	return &personalPlaceEnricher{}
+	return &personalPlace{}
 }
 
-func (e personalPlaceEnricher) Enrich(ctx context.Context, gle *pb.GeoLocationEnriched) {
+func (e personalPlace) Enrich(payload Payload) SetFunc {
 	var personalPlace enrichers.PersonalPlace
 
 	personalPlace.Type = enrichers.PersonalPlace_Type(rand.Intn(maxPersonalPlaceType))
 
-	select {
-	case <-ctx.Done():
-		return
-	default:
+	return func(gle *pb.GeoLocationEnriched) {
 		gle.PersonalPlace = &personalPlace
 	}
 }

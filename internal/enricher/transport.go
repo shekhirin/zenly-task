@@ -1,7 +1,6 @@
 package enricher
 
 import (
-	"context"
 	"github.com/shekhirin/zenly-task/internal/pb"
 	"github.com/shekhirin/zenly-task/internal/pb/enrichers"
 	"math/rand"
@@ -9,21 +8,18 @@ import (
 
 const maxTransportType = int(enrichers.Transport_TRANSPORT_PLANE)
 
-type transportEnricher struct{}
+type transport struct{}
 
 func NewTransport() Enricher {
-	return &transportEnricher{}
+	return &transport{}
 }
 
-func (e transportEnricher) Enrich(ctx context.Context, gle *pb.GeoLocationEnriched) {
+func (e transport) Enrich(payload Payload) SetFunc {
 	var transport enrichers.Transport
 
 	transport.Type = enrichers.Transport_Type(rand.Intn(maxTransportType))
 
-	select {
-	case <-ctx.Done():
-		return
-	default:
+	return func(gle *pb.GeoLocationEnriched) {
 		gle.Transport = &transport
 	}
 }

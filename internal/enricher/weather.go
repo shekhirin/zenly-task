@@ -1,29 +1,25 @@
 package enricher
 
 import (
-	"context"
 	"github.com/shekhirin/zenly-task/internal/pb"
 	"github.com/shekhirin/zenly-task/internal/pb/enrichers"
 	weatherService "github.com/shekhirin/zenly-task/internal/service/weather"
 )
 
-type weatherEnricher struct {
+type weather struct {
 	service weatherService.Service
 }
 
 func NewWeather(service weatherService.Service) Enricher {
-	return &weatherEnricher{service: service}
+	return &weather{service: service}
 }
 
-func (e weatherEnricher) Enrich(ctx context.Context, gle *pb.GeoLocationEnriched) {
+func (e weather) Enrich(payload Payload) SetFunc {
 	var weather enrichers.Weather
 
-	weather.Temperature = e.service.Temperature(gle.GeoLocation.Lat, gle.GeoLocation.Lng)
+	weather.Temperature = e.service.Temperature(payload.Lat, payload.Lng)
 
-	select {
-	case <-ctx.Done():
-		return
-	default:
+	return func(gle *pb.GeoLocationEnriched) {
 		gle.Weather = &weather
 	}
 }

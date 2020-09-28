@@ -61,17 +61,29 @@ func (s *Server) Publish(stream pb.Zenly_PublishServer) error {
 			GeoLocation: publishRequest.GeoLocation,
 		}
 
+		payload := enricher.Payload{
+			UserId: publishRequest.UserId,
+			Lat:    publishRequest.GeoLocation.Lat,
+			Lng:    publishRequest.GeoLocation.Lng,
+		}
+
 		wg := sync.WaitGroup{}
 		wg.Add(len(s.enrichers))
 
 		for _, serverEnricher := range s.enrichers {
-			go func(enricher enricher.Enricher) {
+			go func(targetEnricher enricher.Enricher) {
 				ctx, cancel := context.WithTimeout(context.Background(), EnricherTimeout)
 				defer cancel()
 				defer wg.Done()
 
-				// TODO: don't decide whether timeout exceeded and value shouldn't be set on enricher's own
-				enricher.Enrich(ctx, &geoLocationEnriched)
+				// Don't give control of the context to enricher because of the possibility of forgetting
+				// to check timeout before setting the submessage
+				select {
+				case <-ctx.Done():
+					return
+				case enrich := <-enricher.EnrichChannel(targetEnricher, payload):
+					enrich(&geoLocationEnriched)
+				}
 			}(serverEnricher)
 		}
 
