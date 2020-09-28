@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/nats-io/nats.go"
 	"github.com/shekhirin/zenly-task/internal/pb"
 	"github.com/shekhirin/zenly-task/internal/zenly"
@@ -23,7 +24,11 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.StreamInterceptor(
+			grpcRecovery.StreamServerInterceptor(),
+		),
+	)
 
 	natsConn, err := nats.Connect(*natsAddr)
 	if err != nil {
