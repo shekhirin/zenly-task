@@ -8,10 +8,14 @@ import (
 	"github.com/shekhirin/zenly-task/internal/pb"
 	weatherService "github.com/shekhirin/zenly-task/internal/service/weather"
 	"io"
+	"sync"
+	"time"
 )
 
+const EnricherTimeout = 100 * time.Millisecond
+
 var DefaultEnrichers = []enricher.Enricher{
-	enricher.NewWeather(weatherService.NewService()),
+	enricher.NewWeather(weatherService.New()),
 	enricher.NewPersonalPlace(),
 	enricher.NewTransport(),
 }
@@ -27,11 +31,10 @@ type Server struct {
 }
 
 func NewServer(nats *nats.Conn, enrichers []enricher.Enricher) *Server {
-	s := &Server{
+	return &Server{
 		nats:      nats,
 		enrichers: enrichers,
 	}
-	return s
 }
 
 func (s *Server) Service() *pb.ZenlyService {
@@ -58,9 +61,21 @@ func (s *Server) Publish(stream pb.Zenly_PublishServer) error {
 			GeoLocation: publishRequest.GeoLocation,
 		}
 
+		wg := sync.WaitGroup{}
+		wg.Add(len(s.enrichers))
+
 		for _, serverEnricher := range s.enrichers {
-			serverEnricher.Enrich(context.Background(), &geoLocationEnriched)
+			go func(enricher enricher.Enricher) {
+				ctx, cancel := context.WithTimeout(context.Background(), EnricherTimeout)
+				defer cancel()
+				defer wg.Done()
+
+				// TODO: don't decide whether timeout exceeded and value shouldn't be set on enricher's own
+				enricher.Enrich(ctx, &geoLocationEnriched)
+			}(serverEnricher)
 		}
+
+		wg.Wait()
 
 		message := busMessage{
 			UserId:              publishRequest.UserId,

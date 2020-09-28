@@ -20,5 +20,10 @@ func (e personalPlaceEnricher) Enrich(ctx context.Context, gle *pb.GeoLocationEn
 
 	personalPlace.Type = enrichers.PersonalPlace_Type(rand.Intn(maxPersonalPlaceType))
 
-	gle.PersonalPlace = &personalPlace
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		gle.PersonalPlace = &personalPlace
+	}
 }

@@ -20,5 +20,10 @@ func (e weatherEnricher) Enrich(ctx context.Context, gle *pb.GeoLocationEnriched
 
 	weather.Temperature = e.service.Temperature(gle.GeoLocation.Lat, gle.GeoLocation.Lng)
 
-	gle.Weather = &weather
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		gle.Weather = &weather
+	}
 }

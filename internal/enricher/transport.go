@@ -20,5 +20,10 @@ func (e transportEnricher) Enrich(ctx context.Context, gle *pb.GeoLocationEnrich
 
 	transport.Type = enrichers.Transport_Type(rand.Intn(maxTransportType))
 
-	gle.Transport = &transport
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		gle.Transport = &transport
+	}
 }

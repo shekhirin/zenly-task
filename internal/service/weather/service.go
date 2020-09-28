@@ -8,7 +8,7 @@ type Service interface {
 
 type service struct{}
 
-func NewService() Service {
+func New() Service {
 	return &service{}
 }
 
