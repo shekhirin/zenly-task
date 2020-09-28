@@ -13,5 +13,5 @@ func New() Service {
 }
 
 func (s service) Temperature(lat, lng float64) float64 {
-	return float64(rand.Intn(50 * 100) - 25 * 100) / 100
+	return float64(rand.Intn(50*100)-25*100) / 100
 }
