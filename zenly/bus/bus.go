@@ -2,7 +2,7 @@ package bus
 
 import (
 	"context"
-	"github.com/shekhirin/zenly-task/internal/pb"
+	"github.com/shekhirin/zenly-task/zenly/pb"
 )
 
 type Bus interface {

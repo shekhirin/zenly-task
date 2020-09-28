@@ -1,0 +1,8 @@
+syntax = "proto3";
+option go_package = "github.com/shekhirin/zenly-task/zenly/pb/enricher";
+
+package enricher;
+
+message Weather {
+  double temperature = 1;
+}

@@ -1,13 +1,13 @@
 syntax = "proto3";
-option go_package = "github.com/shekhirin/zenly-task/internal/pb";
+option go_package = "github.com/shekhirin/zenly-task/zenly/pb";
 
 package proto;
 
 import "google/protobuf/timestamp.proto";
 
-import "enrichers/weather.proto";
-import "enrichers/personal_place.proto";
-import "enrichers/transport.proto";
+import "enricher/weather.proto";
+import "enricher/personal_place.proto";
+import "enricher/transport.proto";
 
 message GeoLocation {
   double lat = 1;
@@ -18,7 +18,7 @@ message GeoLocation {
 message GeoLocationEnriched {
   GeoLocation geo_location = 1;
 
-  enrichers.Weather weather = 2;
-  enrichers.PersonalPlace personal_place = 3;
-  enrichers.Transport transport = 4;
+  enricher.Weather weather = 2;
+  enricher.PersonalPlace personal_place = 3;
+  enricher.Transport transport = 4;
 }

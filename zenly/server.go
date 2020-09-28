@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/shekhirin/zenly-task/internal/pb"
-	"github.com/shekhirin/zenly-task/internal/zenly/bus"
-	"github.com/shekhirin/zenly-task/internal/zenly/enricher"
-	weatherService "github.com/shekhirin/zenly-task/internal/zenly/service/weather"
+	"github.com/shekhirin/zenly-task/zenly/bus"
+	"github.com/shekhirin/zenly-task/zenly/enricher"
+	"github.com/shekhirin/zenly-task/zenly/pb"
+	weatherService "github.com/shekhirin/zenly-task/zenly/service/weather"
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/atomic"
 	"io"
@@ -23,28 +23,28 @@ var DefaultEnrichers = []enricher.Enricher{
 	enricher.NewTransport(),
 }
 
-type Server struct {
+type Zenly struct {
 	bus            bus.Bus
 	enricherTimeMS *prometheus.HistogramVec
 	enrichers      []enricher.Enricher
 }
 
-func NewServer(bus bus.Bus, enricherTimeMS *prometheus.HistogramVec, enrichers []enricher.Enricher) *Server {
-	return &Server{
+func New(bus bus.Bus, enricherTimeMS *prometheus.HistogramVec, enrichers []enricher.Enricher) *Zenly {
+	return &Zenly{
 		bus:            bus,
 		enricherTimeMS: enricherTimeMS,
 		enrichers:      enrichers,
 	}
 }
 
-func (s *Server) Service() *pb.ZenlyService {
+func (z *Zenly) Service() *pb.ZenlyService {
 	return &pb.ZenlyService{
-		Publish:   s.Publish,
-		Subscribe: s.Subscribe,
+		Publish:   z.Publish,
+		Subscribe: z.Subscribe,
 	}
 }
 
-func (s *Server) Publish(stream pb.Zenly_PublishServer) error {
+func (z *Zenly) Publish(stream pb.Zenly_PublishServer) error {
 	for {
 		publishRequest, err := stream.Recv()
 		switch err {
@@ -71,13 +71,13 @@ func (s *Server) Publish(stream pb.Zenly_PublishServer) error {
 		var completed atomic.Int32
 
 		var wg sync.WaitGroup
-		wg.Add(len(s.enrichers))
+		wg.Add(len(z.enrichers))
 		waitCh := make(chan struct{})
 
 		ctx, _ := context.WithTimeout(context.Background(), EnricherTimeout)
 
 		go func() {
-			for _, serverEnricher := range s.enrichers {
+			for _, serverEnricher := range z.enrichers {
 				go func(enricher enricher.Enricher) {
 					defer wg.Done()
 
@@ -88,7 +88,7 @@ func (s *Server) Publish(stream pb.Zenly_PublishServer) error {
 					enrich := enricher.Enrich(payload)
 					elapsed := time.Since(start)
 
-					s.enricherTimeMS.With(prometheus.Labels{"enricher": enricher.String()}).Observe(float64(elapsed.Milliseconds()))
+					z.enricherTimeMS.With(prometheus.Labels{"enricher": enricher.String()}).Observe(float64(elapsed.Milliseconds()))
 
 					debugString := fmt.Sprintf("%s took %s\n", enricher.String(), elapsed.String())
 
@@ -120,14 +120,14 @@ func (s *Server) Publish(stream pb.Zenly_PublishServer) error {
 			GeoLocation: &geoLocationEnriched,
 		}
 
-		if err := s.bus.Publish(message); err != nil {
+		if err := z.bus.Publish(message); err != nil {
 			return err
 		}
 	}
 }
 
-func (s *Server) Subscribe(request *pb.SubscribeRequest, stream pb.Zenly_SubscribeServer) error {
-	ch, cancel, err := s.bus.Subscribe(request.UserId)
+func (z *Zenly) Subscribe(request *pb.SubscribeRequest, stream pb.Zenly_SubscribeServer) error {
+	ch, cancel, err := z.bus.Subscribe(request.UserId)
 	if err != nil {
 		return err
 	}

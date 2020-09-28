@@ -1,12 +1,12 @@
 package enricher
 
 import (
-	"github.com/shekhirin/zenly-task/internal/pb"
-	"github.com/shekhirin/zenly-task/internal/pb/enrichers"
+	"github.com/shekhirin/zenly-task/zenly/pb"
+	"github.com/shekhirin/zenly-task/zenly/pb/enricher"
 	"math/rand"
 )
 
-const maxPersonalPlaceType = int(enrichers.PersonalPlace_PERSONAL_PLACE_SCHOOL)
+const maxPersonalPlaceType = int(enricher.PersonalPlace_PERSONAL_PLACE_SCHOOL)
 
 type personalPlace struct{}
 
@@ -15,9 +15,9 @@ func NewPersonalPlace() Enricher {
 }
 
 func (e personalPlace) Enrich(payload Payload) SetFunc {
-	var personalPlace enrichers.PersonalPlace
+	var personalPlace enricher.PersonalPlace
 
-	personalPlace.Type = enrichers.PersonalPlace_Type(rand.Intn(maxPersonalPlaceType))
+	personalPlace.Type = enricher.PersonalPlace_Type(rand.Intn(maxPersonalPlaceType))
 
 	simulateIO()
 

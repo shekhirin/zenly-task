@@ -2,12 +2,12 @@ DOCKER_COMPOSE=docker-compose -p zenly
 
 .PHOY: proto-clean
 proto-clean:
-	@rm -r internal/pb/*
+	@find zenly/pb/ -mindepth 1 -delete
 
 .PHONY: proto-gen
 proto-gen: proto-clean
-	@protoc --go_out=./internal/pb \
-	--go-grpc_out=./internal/pb \
+	@protoc --go_out=./zenly/pb \
+	--go-grpc_out=./zenly/pb \
 	--go_opt=paths=source_relative \
 	--go-grpc_opt=paths=source_relative \
 	-I ./proto \

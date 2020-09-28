@@ -1,9 +1,9 @@
 package enricher
 
 import (
-	"github.com/shekhirin/zenly-task/internal/pb"
-	"github.com/shekhirin/zenly-task/internal/pb/enrichers"
-	weatherService "github.com/shekhirin/zenly-task/internal/zenly/service/weather"
+	"github.com/shekhirin/zenly-task/zenly/pb"
+	"github.com/shekhirin/zenly-task/zenly/pb/enricher"
+	weatherService "github.com/shekhirin/zenly-task/zenly/service/weather"
 )
 
 type weather struct {
@@ -15,7 +15,7 @@ func NewWeather(service weatherService.Service) Enricher {
 }
 
 func (e weather) Enrich(payload Payload) SetFunc {
-	var weather enrichers.Weather
+	var weather enricher.Weather
 
 	weather.Temperature = e.service.Temperature(payload.Lat, payload.Lng)
 

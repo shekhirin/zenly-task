@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/golang/protobuf/proto"
 	"github.com/nats-io/nats.go"
-	"github.com/shekhirin/zenly-task/internal/pb"
+	"github.com/shekhirin/zenly-task/zenly/pb"
 )
 
 type natsBus struct {

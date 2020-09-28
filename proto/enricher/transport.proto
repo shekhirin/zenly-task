@@ -1,7 +1,7 @@
 syntax = "proto3";
-option go_package = "github.com/shekhirin/zenly-task/internal/pb/enrichers";
+option go_package = "github.com/shekhirin/zenly-task/zenly/pb/enricher";
 
-package enrichers;
+package enricher;
 
 message Transport {
   enum Type {

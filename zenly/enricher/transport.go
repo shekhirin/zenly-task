@@ -1,12 +1,12 @@
 package enricher
 
 import (
-	"github.com/shekhirin/zenly-task/internal/pb"
-	"github.com/shekhirin/zenly-task/internal/pb/enrichers"
+	"github.com/shekhirin/zenly-task/zenly/pb"
+	"github.com/shekhirin/zenly-task/zenly/pb/enricher"
 	"math/rand"
 )
 
-const maxTransportType = int(enrichers.Transport_TRANSPORT_PLANE)
+const maxTransportType = int(enricher.Transport_TRANSPORT_PLANE)
 
 type transport struct{}
 
@@ -15,9 +15,9 @@ func NewTransport() Enricher {
 }
 
 func (e transport) Enrich(payload Payload) SetFunc {
-	var transport enrichers.Transport
+	var transport enricher.Transport
 
-	transport.Type = enrichers.Transport_Type(rand.Intn(maxTransportType))
+	transport.Type = enricher.Transport_Type(rand.Intn(maxTransportType))
 
 	simulateIO()
 
