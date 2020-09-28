@@ -2,11 +2,10 @@ package zenly
 
 import (
 	"context"
-	"github.com/golang/protobuf/proto"
-	"github.com/nats-io/nats.go"
-	"github.com/shekhirin/zenly-task/internal/enricher"
 	"github.com/shekhirin/zenly-task/internal/pb"
-	weatherService "github.com/shekhirin/zenly-task/internal/service/weather"
+	"github.com/shekhirin/zenly-task/internal/zenly/bus"
+	"github.com/shekhirin/zenly-task/internal/zenly/enricher"
+	weatherService "github.com/shekhirin/zenly-task/internal/zenly/service/weather"
 	"io"
 	"sync"
 	"time"
@@ -21,13 +20,13 @@ var DefaultEnrichers = []enricher.Enricher{
 }
 
 type Server struct {
-	nats      *nats.Conn
+	bus       bus.Bus
 	enrichers []enricher.Enricher
 }
 
-func NewServer(nats *nats.Conn, enrichers []enricher.Enricher) *Server {
+func NewServer(bus bus.Bus, enrichers []enricher.Enricher) *Server {
 	return &Server{
-		nats:      nats,
+		bus:       bus,
 		enrichers: enrichers,
 	}
 }
@@ -72,7 +71,7 @@ func (s *Server) Publish(stream pb.Zenly_PublishServer) error {
 				defer wg.Done()
 
 				// Don't give control of the context to enricher because of the possibility of forgetting
-				// to check timeout before setting the submessage
+				// to check timeout before setting the submessage inside the enricher
 				select {
 				case <-ctx.Done():
 					return
@@ -89,46 +88,24 @@ func (s *Server) Publish(stream pb.Zenly_PublishServer) error {
 			GeoLocation: &geoLocationEnriched,
 		}
 
-		data, err := proto.Marshal(message)
-		if err != nil {
-			return err
-		}
-
-		if err := s.nats.Publish("zenly", data); err != nil {
+		if err := s.bus.Publish(message); err != nil {
 			return err
 		}
 	}
 }
 
 func (s *Server) Subscribe(request *pb.SubscribeRequest, stream pb.Zenly_SubscribeServer) error {
-	var userIds = make(map[int32]bool)
-	for _, userId := range request.UserId {
-		userIds[userId] = true
-	}
-
-	var ch = make(chan *nats.Msg)
-
-	sub, err := s.nats.ChanSubscribe("zenly", ch)
+	ch, cancel, err := s.bus.Subscribe(request.UserId)
 	if err != nil {
 		return err
 	}
-
-	defer func(sub *nats.Subscription) {
-		_ = sub.Unsubscribe()
-	}(sub)
+	defer cancel()
 
 	for {
 		select {
-		case msg := <-ch:
-			var message pb.BusMessage
-			if err := proto.Unmarshal(msg.Data, &message); err != nil {
-				continue
-			}
-
-			if !userIds[message.UserId] {
-				continue
-			}
-
+		case <-stream.Context().Done():
+			return stream.Context().Err()
+		case message := <-ch:
 			subscribeResponse := &pb.SubscribeResponse{
 				UserId:      message.UserId,
 				GeoLocation: message.GeoLocation,

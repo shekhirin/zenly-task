@@ -3,7 +3,7 @@ package enricher
 import (
 	"github.com/shekhirin/zenly-task/internal/pb"
 	"github.com/shekhirin/zenly-task/internal/pb/enrichers"
-	weatherService "github.com/shekhirin/zenly-task/internal/service/weather"
+	weatherService "github.com/shekhirin/zenly-task/internal/zenly/service/weather"
 )
 
 type weather struct {

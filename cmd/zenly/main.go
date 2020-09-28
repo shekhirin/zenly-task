@@ -6,14 +6,16 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/shekhirin/zenly-task/internal/pb"
 	"github.com/shekhirin/zenly-task/internal/zenly"
+	"github.com/shekhirin/zenly-task/internal/zenly/bus"
 	"google.golang.org/grpc"
 	"log"
 	"net"
 )
 
 var (
-	addr     = flag.String("addr", ":8080", "Server addr")
-	natsAddr = flag.String("nats-addr", ":4222", "NATS addr")
+	addr       = flag.String("addr", ":8080", "Server addr")
+	natsAddr   = flag.String("nats-addr", ":4222", "NATS addr")
+	busSubject = flag.String("bus-subject", "zenly", "Bus subject")
 )
 
 func main() {
@@ -35,7 +37,9 @@ func main() {
 		log.Fatalf("failed to connect to NATS: %v", err)
 	}
 
-	zenlyServer := zenly.NewServer(natsConn, zenly.DefaultEnrichers)
+	natsBus := bus.NewNats(natsConn, *busSubject)
+
+	zenlyServer := zenly.NewServer(natsBus, zenly.DefaultEnrichers)
 
 	pb.RegisterZenlyService(grpcServer, zenlyServer.Service())
 
