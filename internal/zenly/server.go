@@ -2,7 +2,7 @@ package zenly
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/golang/protobuf/proto"
 	"github.com/nats-io/nats.go"
 	"github.com/shekhirin/zenly-task/internal/enricher"
 	"github.com/shekhirin/zenly-task/internal/pb"
@@ -18,11 +18,6 @@ var DefaultEnrichers = []enricher.Enricher{
 	enricher.NewWeather(weatherService.New()),
 	enricher.NewPersonalPlace(),
 	enricher.NewTransport(),
-}
-
-type busMessage struct {
-	UserId              int32                   `json:"user_id"`
-	GeoLocationEnriched *pb.GeoLocationEnriched `json:"geo_location_enriched"`
 }
 
 type Server struct {
@@ -89,12 +84,12 @@ func (s *Server) Publish(stream pb.Zenly_PublishServer) error {
 
 		wg.Wait()
 
-		message := busMessage{
-			UserId:              publishRequest.UserId,
-			GeoLocationEnriched: &geoLocationEnriched,
+		message := &pb.BusMessage{
+			UserId:      publishRequest.UserId,
+			GeoLocation: &geoLocationEnriched,
 		}
 
-		data, err := json.Marshal(message)
+		data, err := proto.Marshal(message)
 		if err != nil {
 			return err
 		}
@@ -125,8 +120,8 @@ func (s *Server) Subscribe(request *pb.SubscribeRequest, stream pb.Zenly_Subscri
 	for {
 		select {
 		case msg := <-ch:
-			var message busMessage
-			if err := json.Unmarshal(msg.Data, &message); err != nil {
+			var message pb.BusMessage
+			if err := proto.Unmarshal(msg.Data, &message); err != nil {
 				continue
 			}
 
@@ -136,7 +131,7 @@ func (s *Server) Subscribe(request *pb.SubscribeRequest, stream pb.Zenly_Subscri
 
 			subscribeResponse := &pb.SubscribeResponse{
 				UserId:      message.UserId,
-				GeoLocation: message.GeoLocationEnriched,
+				GeoLocation: message.GeoLocation,
 			}
 
 			if err := stream.Send(subscribeResponse); err != nil {
