@@ -6,6 +6,7 @@ import (
 	"github.com/shekhirin/zenly-task/zenly/enricher"
 	"github.com/shekhirin/zenly-task/zenly/metrics"
 	"github.com/shekhirin/zenly-task/zenly/pb"
+	log "github.com/sirupsen/logrus"
 	"sync"
 	"time"
 )
@@ -18,7 +19,7 @@ func (z *Zenly) Enrich(payload enricher.Payload, gle *pb.GeoLocationEnriched) {
 	ctx, _ := context.WithTimeout(context.Background(), EnricherTimeout)
 
 	go func() {
-		for _, serverEnricher := range z.enrichers {
+		for _, targetEnricher := range z.enrichers {
 			go func(enricher enricher.Enricher) {
 				defer wg.Done()
 
@@ -30,11 +31,15 @@ func (z *Zenly) Enrich(payload enricher.Payload, gle *pb.GeoLocationEnriched) {
 				elapsed := time.Since(start)
 
 				metrics.EnricherTimeMS.With(prometheus.Labels{"enricher": enricher.String()}).Observe(float64(elapsed.Milliseconds()))
+				log.WithFields(log.Fields{
+					"enricher":   enricher.String(),
+					"elapsed_ms": elapsed.Milliseconds(),
+				}).Debug("finish enricher")
 
 				if ctx.Err() == nil {
 					enrich(gle)
 				}
-			}(serverEnricher)
+			}(targetEnricher)
 		}
 
 		wg.Wait()
@@ -43,6 +48,8 @@ func (z *Zenly) Enrich(payload enricher.Payload, gle *pb.GeoLocationEnriched) {
 
 	select {
 	case <-ctx.Done():
+		log.WithField("reason", "timeout").Debug("finish enrich")
 	case <-waitCh:
+		log.WithField("reason", "complete").Debug("finish enrich")
 	}
 }

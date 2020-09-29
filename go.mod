@@ -10,6 +10,7 @@ require (
 	github.com/nats-io/nats-server/v2 v2.1.8 // indirect
 	github.com/nats-io/nats.go v1.10.0
 	github.com/prometheus/client_golang v1.7.1
+	github.com/prometheus/common v0.10.0
 	github.com/sirupsen/logrus v1.4.2
 	go.uber.org/atomic v1.4.0
 	golang.org/x/exp v0.0.0-20200331195152-e8c3332aa8e5
