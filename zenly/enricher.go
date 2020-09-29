@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+const (
+	EnrichComplete = "complete"
+	EnrichTimeout  = "timeout"
+)
+
 func (z *Zenly) Enrich(payload enricher.Payload, gle *pb.GeoLocationEnriched) {
 	var wg sync.WaitGroup
 	wg.Add(len(z.enrichers))
@@ -18,22 +23,28 @@ func (z *Zenly) Enrich(payload enricher.Payload, gle *pb.GeoLocationEnriched) {
 
 	ctx, _ := context.WithTimeout(context.Background(), EnricherTimeout)
 
+	reasonCh := make(chan string, 1)
+
 	go func() {
+		start := time.Now()
+
 		for _, targetEnricher := range z.enrichers {
 			go func(enricher enricher.Enricher) {
 				defer wg.Done()
 
-				start := time.Now()
+				enricherStart := time.Now()
 
 				// Don't give control of the context to enricher because of the possibility of forgetting
 				// to check timeout before setting the submessage inside the enricher
 				enrich := enricher.Enrich(payload)
-				elapsed := time.Since(start)
+				enricherElapsed := time.Since(enricherStart)
 
-				metrics.EnricherTimeMS.With(prometheus.Labels{"enricher": enricher.String()}).Observe(float64(elapsed.Milliseconds()))
+				metrics.EnricherTimeMS.With(prometheus.Labels{
+					"enricher": enricher.String(),
+				}).Observe(float64(enricherElapsed.Milliseconds()))
 				log.WithFields(log.Fields{
 					"enricher":   enricher.String(),
-					"elapsed_ms": elapsed.Milliseconds(),
+					"elapsed_ms": enricherElapsed.Milliseconds(),
 				}).Debug("finish enricher")
 
 				if ctx.Err() == nil {
@@ -44,12 +55,18 @@ func (z *Zenly) Enrich(payload enricher.Payload, gle *pb.GeoLocationEnriched) {
 
 		wg.Wait()
 		close(waitCh)
+
+		elapsed := time.Since(start)
+
+		reason := <-reasonCh
+		metrics.EnrichFinish.With(prometheus.Labels{"reason": reason}).Observe(float64(elapsed.Milliseconds()))
+		log.WithFields(log.Fields{"reason": reason, "elapsed_ms": elapsed}).Debug("finish enrich")
 	}()
 
 	select {
 	case <-ctx.Done():
-		log.WithField("reason", "timeout").Debug("finish enrich")
+		reasonCh <- EnrichTimeout
 	case <-waitCh:
-		log.WithField("reason", "complete").Debug("finish enrich")
+		reasonCh <- EnrichComplete
 	}
 }
