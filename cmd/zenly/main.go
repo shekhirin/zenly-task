@@ -20,7 +20,7 @@ import (
 var (
 	env             = flag.String("env", "debug", "App environment")
 	addr            = flag.String("addr", ":8080", "Server addr")
-	diagnosticsAddr = flag.String("diagnostics-addr", ":8081", "Diagnostics addr")
+	diagnosticsAddr = flag.String("diagnostics-addr", ":7777", "Diagnostics addr")
 	natsAddr        = flag.String("nats-addr", ":4222", "NATS addr")
 	busSubject      = flag.String("bus-subject", "zenly", "Bus subject")
 )

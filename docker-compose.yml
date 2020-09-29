@@ -6,4 +6,4 @@ services:
     command: "./zenly -env=prod -nats-addr=nats:4222"
     ports:
     - 8080:8080
-    - 8081:8081
+    - 7777

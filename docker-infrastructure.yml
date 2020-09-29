@@ -3,6 +3,11 @@ version: '3'
 services:
   zookeeper:
     image: bitnami/zookeeper:3.6.2
+    ports:
+      - 2181
+      - 2888
+      - 3888
+      - 8080
     volumes:
       - zookeeper_data:/bitnami
     environment:
@@ -24,18 +29,33 @@ services:
     image: bitnami/nats:2.1.8
     ports:
       - 4222:4222
-      - 8222:8222
+      - 6222
+      - 8222
 
   prometheus:
     image: prom/prometheus:v2.21.0
+    ports:
+      - 9090:9090
     volumes:
       - ./prometheus/:/etc/prometheus/
       - prometheus_data:/prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
+    depends_on:
+      - nats-prometheus-exporter
+
+  nats-prometheus-exporter:
+    image: synadia/prometheus-nats-exporter:0.6.2
     ports:
-      - 9090:9090
+      - 7777
+    command:
+      - -varz
+      - -connz
+      - -subz
+      - http://nats:8222
+    depends_on:
+      - nats
 
   grafana:
     image: grafana/grafana

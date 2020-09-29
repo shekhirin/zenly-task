@@ -3,4 +3,4 @@ scrape_configs:
     scrape_interval: 5s
     metrics_path: '/metrics'
     static_configs:
-      - targets: ['zenly:8081']
+      - targets: ['zenly:7777', 'nats-prometheus-exporter:7777']
