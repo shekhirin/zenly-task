@@ -29,18 +29,17 @@ func (bus natsBus) Publish(message *pb.BusMessage) error {
 	return bus.nats.Publish(bus.subject, data)
 }
 
-func (bus natsBus) Subscribe(userIds []int32) (<-chan *pb.BusMessage, context.CancelFunc, error) {
-	var ch = make(chan *pb.BusMessage)
-	var natsCh = make(chan *nats.Msg)
+func (bus natsBus) Subscribe(userIds []int32, messageFunc func(message *pb.BusMessage) error) (context.CancelFunc, error) {
+	var ch = make(chan *nats.Msg)
 
 	var userIdsMapping = make(map[int32]bool)
 	for _, userId := range userIds {
 		userIdsMapping[userId] = true
 	}
 
-	sub, err := bus.nats.ChanSubscribe(bus.subject, natsCh)
+	sub, err := bus.nats.ChanSubscribe(bus.subject, ch)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -50,7 +49,7 @@ func (bus natsBus) Subscribe(userIds []int32) (<-chan *pb.BusMessage, context.Ca
 			case <-ctx.Done():
 				_ = sub.Unsubscribe()
 				return
-			case msg := <-natsCh:
+			case msg := <-ch:
 				var message pb.BusMessage
 				if err := proto.Unmarshal(msg.Data, &message); err != nil {
 					continue
@@ -60,10 +59,12 @@ func (bus natsBus) Subscribe(userIds []int32) (<-chan *pb.BusMessage, context.Ca
 					continue
 				}
 
-				ch <- &message
+				if err := messageFunc(&message); err != nil {
+					cancel()
+				}
 			}
 		}
 	}()
 
-	return ch, cancel, nil
+	return cancel, nil
 }

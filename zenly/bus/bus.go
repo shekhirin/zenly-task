@@ -7,5 +7,5 @@ import (
 
 type Bus interface {
 	Publish(message *pb.BusMessage) error
-	Subscribe(userIds []int32) (<-chan *pb.BusMessage, context.CancelFunc, error)
+	Subscribe(userIds []int32, messageFunc func(message *pb.BusMessage) error) (context.CancelFunc, error)
 }

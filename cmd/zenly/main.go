@@ -7,7 +7,6 @@ import (
 	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	grpcPrometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/nats-io/nats.go"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shekhirin/zenly-task/zenly"
 	natsBus "github.com/shekhirin/zenly-task/zenly/bus/nats"
@@ -26,18 +25,9 @@ var (
 	busSubject      = flag.String("bus-subject", "zenly", "Bus subject")
 )
 
-var (
-	enricherTimeMS = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "enricher_time_ms",
-		Buckets: []float64{25, 50, 75, 100},
-	}, []string{"enricher"})
-)
-
 var logEntry = log.NewEntry(log.StandardLogger())
 
 func init() {
-	prometheus.MustRegister(enricherTimeMS)
-
 	grpcLogrus.ReplaceGrpcLogger(logEntry)
 }
 
@@ -68,7 +58,7 @@ func main() {
 
 	bus := natsBus.New(natsConn, *busSubject)
 
-	zenlyService := zenly.New(bus, enricherTimeMS, zenly.DefaultEnrichers).Service()
+	zenlyService := zenly.New(bus, zenly.DefaultEnrichers).Service()
 
 	pb.RegisterZenlyService(grpcServer, zenlyService)
 
