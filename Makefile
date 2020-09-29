@@ -11,7 +11,7 @@ proto-gen: proto-clean
 	--go_opt=paths=source_relative \
 	--go-grpc_opt=paths=source_relative \
 	-I ./proto \
-	proto/*.proto proto/**/*.proto
+	$(shell find ./proto -iname "*.proto")
 
 .PHONY: infra-up
 infra-up:
