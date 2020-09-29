@@ -10,7 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shekhirin/zenly-task/zenly"
-	"github.com/shekhirin/zenly-task/zenly/bus"
+	natsBus "github.com/shekhirin/zenly-task/zenly/bus/nats"
 	"github.com/shekhirin/zenly-task/zenly/pb"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -66,9 +66,9 @@ func main() {
 		log.WithError(err).Fatalf("connect to NATS on %s", *natsAddr)
 	}
 
-	natsBus := bus.NewNats(natsConn, *busSubject)
+	bus := natsBus.New(natsConn, *busSubject)
 
-	zenlyService := zenly.New(natsBus, enricherTimeMS, zenly.DefaultEnrichers).Service()
+	zenlyService := zenly.New(bus, enricherTimeMS, zenly.DefaultEnrichers).Service()
 
 	pb.RegisterZenlyService(grpcServer, zenlyService)
 

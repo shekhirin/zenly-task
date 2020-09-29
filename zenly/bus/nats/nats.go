@@ -1,9 +1,10 @@
-package bus
+package nats
 
 import (
 	"context"
 	"github.com/golang/protobuf/proto"
 	"github.com/nats-io/nats.go"
+	"github.com/shekhirin/zenly-task/zenly/bus"
 	"github.com/shekhirin/zenly-task/zenly/pb"
 )
 
@@ -12,7 +13,7 @@ type natsBus struct {
 	subject string
 }
 
-func NewNats(natsConn *nats.Conn, subject string) Bus {
+func New(natsConn *nats.Conn, subject string) bus.Bus {
 	return &natsBus{
 		nats:    natsConn,
 		subject: subject,
