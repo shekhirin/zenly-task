@@ -16,13 +16,13 @@ var DefaultEnrichers = []enricher.Enricher{
 }
 
 type Zenly struct {
-	bus            bus.Bus
-	enrichers      []enricher.Enricher
+	bus       bus.Bus
+	enrichers []enricher.Enricher
 }
 
 func New(bus bus.Bus, enrichers []enricher.Enricher) *Zenly {
 	return &Zenly{
-		bus:            bus,
-		enrichers:      enrichers,
+		bus:       bus,
+		enrichers: enrichers,
 	}
 }

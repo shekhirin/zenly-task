@@ -59,7 +59,7 @@ func (z *Zenly) Enrich(payload enricher.Payload, gle *pb.GeoLocationEnriched) {
 		elapsed := time.Since(start)
 
 		reason := <-reasonCh
-		metrics.EnrichFinish.With(prometheus.Labels{"reason": reason}).Observe(float64(elapsed.Milliseconds()))
+		metrics.EnrichFinishMS.With(prometheus.Labels{"reason": reason}).Observe(float64(elapsed.Milliseconds()))
 		log.WithFields(log.Fields{"reason": reason, "elapsed_ms": elapsed}).Debug("finish enrich")
 	}()
 
