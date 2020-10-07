@@ -12,6 +12,7 @@ require (
 	github.com/prometheus/client_golang v1.7.1
 	github.com/prometheus/common v0.10.0
 	github.com/sirupsen/logrus v1.4.2
+	github.com/stretchr/testify v1.4.0
 	go.uber.org/atomic v1.4.0
 	golang.org/x/exp v0.0.0-20200331195152-e8c3332aa8e5
 	google.golang.org/grpc v1.32.0

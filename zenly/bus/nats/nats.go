@@ -29,7 +29,8 @@ func (bus natsBus) Publish(message *pb.BusMessage) error {
 	return bus.nats.Publish(bus.subject, data)
 }
 
-func (bus natsBus) Subscribe(userIds []int32, messageFunc bus.MessageFunc) (context.CancelFunc, error) {
+func (bus natsBus) Subscribe(userIds []int32) (<-chan *pb.BusMessage, context.CancelFunc, error) {
+	ch := make(chan *pb.BusMessage)
 	ctx, cancel := context.WithCancel(context.Background())
 
 	var userIdsMapping = make(map[int32]bool)
@@ -37,23 +38,24 @@ func (bus natsBus) Subscribe(userIds []int32, messageFunc bus.MessageFunc) (cont
 		userIdsMapping[userId] = true
 	}
 
-	sub, err := bus.nats.Subscribe(bus.subject, bus.MessageHandler(userIdsMapping, messageFunc, cancel))
+	sub, err := bus.nats.Subscribe(bus.subject, bus.MessageHandler(userIdsMapping, ch))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	go func() {
-		<-ctx.Done()
-		_ = sub.Unsubscribe()
+		select {
+		case <-ctx.Done():
+			_ = sub.Unsubscribe()
+		}
 	}()
 
-	return cancel, nil
+	return ch, cancel, nil
 }
 
 func (bus natsBus) MessageHandler(
 	userIdsMapping map[int32]bool,
-	messageFunc bus.MessageFunc,
-	cancel context.CancelFunc,
+	ch chan<- *pb.BusMessage,
 ) nats.MsgHandler {
 	return func(msg *nats.Msg) {
 		var message pb.BusMessage
@@ -61,12 +63,11 @@ func (bus natsBus) MessageHandler(
 			return
 		}
 
+		// TODO: implement more convenient user id routing
 		if !userIdsMapping[message.UserId] {
 			return
 		}
 
-		if err := messageFunc(&message); err != nil {
-			cancel()
-		}
+		ch <- &message
 	}
 }

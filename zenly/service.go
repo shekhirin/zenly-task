@@ -52,14 +52,7 @@ func (z *Zenly) Publish(stream pb.Zenly_PublishServer) error {
 }
 
 func (z *Zenly) Subscribe(request *pb.SubscribeRequest, stream pb.Zenly_SubscribeServer) error {
-	cancel, err := z.bus.Subscribe(request.UserId, func(message *pb.BusMessage) error {
-		subscribeResponse := &pb.SubscribeResponse{
-			UserId:      message.UserId,
-			GeoLocation: message.GeoLocation,
-		}
-
-		return stream.Send(subscribeResponse)
-	})
+	ch, cancel, err := z.bus.Subscribe(request.UserId)
 	if err != nil {
 		return err
 	}
@@ -72,6 +65,15 @@ func (z *Zenly) Subscribe(request *pb.SubscribeRequest, stream pb.Zenly_Subscrib
 			case context.Canceled:
 				return nil
 			default:
+				return err
+			}
+		case message := <-ch:
+			subscribeResponse := &pb.SubscribeResponse{
+				UserId:      message.UserId,
+				GeoLocation: message.GeoLocation,
+			}
+
+			if err := stream.Send(subscribeResponse); err != nil {
 				return err
 			}
 		}

@@ -9,5 +9,5 @@ type MessageFunc func(message *pb.BusMessage) error
 
 type Bus interface {
 	Publish(message *pb.BusMessage) error
-	Subscribe(userIds []int32, messageFunc MessageFunc) (context.CancelFunc, error)
+	Subscribe(userIds []int32) (<-chan *pb.BusMessage, context.CancelFunc, error)
 }

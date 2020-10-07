@@ -28,3 +28,7 @@ up:
 .PHONY: down
 down:
 	@$(DOCKER_COMPOSE) -f docker-compose.yml down
+
+.PHONY: mockgen
+mockgen:
+	@find ~+ -type f -print0 | xargs -0 grep -l "^//go:generate" | sort -u | xargs -L1 -P $$(nproc) go generate
