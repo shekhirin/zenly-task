@@ -5,9 +5,9 @@ package enricher;
 
 message PersonalPlace {
   enum Type {
-    PERSONAL_PLACE_HOME = 0;
-    PERSONAL_PLACE_WORK = 1;
-    PERSONAL_PLACE_SCHOOL = 2;
+    HOME = 0;
+    WORK = 1;
+    SCHOOL = 2;
   }
   Type type = 1;
 }

@@ -6,7 +6,7 @@ import (
 	"math/rand"
 )
 
-const maxPersonalPlaceType = int(enricher.PersonalPlace_PERSONAL_PLACE_SCHOOL)
+const maxPersonalPlaceType = int(enricher.PersonalPlace_SCHOOL)
 
 type personalPlace struct{}
 

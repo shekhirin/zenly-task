@@ -6,7 +6,7 @@ import (
 	"math/rand"
 )
 
-const maxTransportType = int(enricher.Transport_TRANSPORT_PLANE)
+const maxTransportType = int(enricher.Transport_PLANE)
 
 type transport struct{}
 

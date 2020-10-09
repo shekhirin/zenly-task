@@ -5,9 +5,9 @@ package enricher;
 
 message Transport {
   enum Type {
-    TRANSPORT_CAR = 0;
-    TRANSPORT_TRAIN = 1;
-    TRANSPORT_PLANE = 2;
+    CAR = 0;
+    TRAIN = 1;
+    PLANE = 2;
   }
   Type type = 1;
 }

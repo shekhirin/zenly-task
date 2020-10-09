@@ -4,7 +4,7 @@ GRAFANA_URL=http://admin:admin@grafana:3000
 
 .PHOY: protoclean
 protoclean:
-	@find zenly/pb/ -mindepth 1 -delete
+	@find zenly/pb/ -mindepth 1 ! -path '*/mocks/*' -a ! -name "generate.go" -delete
 
 .PHONY: protogen
 protogen: protoclean
