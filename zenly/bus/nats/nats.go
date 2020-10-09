@@ -2,10 +2,13 @@ package nats
 
 import (
 	"context"
+	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/nats-io/nats.go"
 	"github.com/shekhirin/zenly-task/zenly/bus"
+	"github.com/shekhirin/zenly-task/zenly/bus/nats/multisub"
 	"github.com/shekhirin/zenly-task/zenly/pb"
+	"strconv"
 )
 
 type natsBus struct {
@@ -26,18 +29,14 @@ func (bus natsBus) Publish(message *pb.BusMessage) error {
 		return err
 	}
 
-	return bus.nats.Publish(bus.subject, data)
+	return bus.nats.Publish(fmt.Sprintf("%s.%d", bus.subject, message.UserId), data)
 }
 
 func (bus natsBus) Subscribe(userIds []int32) (<-chan *pb.BusMessage, context.CancelFunc, error) {
 	ch := make(chan *pb.BusMessage)
 	ctx, cancel := context.WithCancel(context.Background())
 
-	sub, err := bus.nats.Subscribe(bus.subject, bus.MessageHandler(userIds, ch))
-	if err != nil {
-		return nil, nil, err
-	}
-
+	sub := multisub.New(bus.nats, bus.subject)
 	go func() {
 		select {
 		case <-ctx.Done():
@@ -45,26 +44,24 @@ func (bus natsBus) Subscribe(userIds []int32) (<-chan *pb.BusMessage, context.Ca
 		}
 	}()
 
+	var subjects []string
+	for _, userId := range userIds {
+		subjects = append(subjects, strconv.Itoa(int(userId)))
+	}
+
+	if err := sub.SubscribeMany(subjects, bus.MessageHandler(ch)); err != nil {
+		return nil, nil, err
+	}
+
 	return ch, cancel, nil
 }
 
 func (bus natsBus) MessageHandler(
-	userIds []int32,
 	ch chan<- *pb.BusMessage,
 ) nats.MsgHandler {
-	var userIdsMapping = make(map[int32]bool)
-	for _, userId := range userIds {
-		userIdsMapping[userId] = true
-	}
-
 	return func(msg *nats.Msg) {
 		var message pb.BusMessage
 		if err := proto.Unmarshal(msg.Data, &message); err != nil {
-			return
-		}
-
-		// TODO: implement more convenient user id routing
-		if !userIdsMapping[message.UserId] {
 			return
 		}
 

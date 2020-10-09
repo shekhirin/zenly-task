@@ -42,12 +42,12 @@ func (z *Zenly) Enrich(payload enricher.Payload, gle *pb.GeoLocationEnriched) {
 
 				metrics.EnricherTimeMS.With(prometheus.Labels{
 					"enricher": enricher.String(),
-					"timeout": fmt.Sprintf("%t", enricherElapsed > EnricherTimeout),
+					"timeout":  fmt.Sprintf("%t", enricherElapsed > EnricherTimeout),
 				}).Observe(float64(enricherElapsed.Milliseconds()))
 
 				log.WithFields(log.Fields{
 					"enricher":   enricher.String(),
-					"timeout": fmt.Sprintf("%t", enricherElapsed > EnricherTimeout),
+					"timeout":    fmt.Sprintf("%t", enricherElapsed > EnricherTimeout),
 					"elapsed_ms": enricherElapsed.Milliseconds(),
 				}).Debug("finish enricher")
 

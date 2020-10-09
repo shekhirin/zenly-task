@@ -7,15 +7,16 @@ import (
 )
 
 var (
-	grpcAddr = flag.String("grpc-addr", "localhost:8080", "gRPC addr")
-	rps      = flag.Int("rps", 10, "RPS")
-	duration = flag.Duration("duration", 1*time.Minute, "Duration (0 for infinite)")
+	grpcAddr   = flag.String("grpc-addr", "localhost:8080", "gRPC addr")
+	rps        = flag.Int("rps", 10, "RPS")
+	duration   = flag.Duration("duration", 1*time.Minute, "Duration (0 for infinite)")
+	userIdsNum = flag.Int("user-ids-num", 10, "User IDs number")
 )
 
 func main() {
 	flag.Parse()
 
-	loader := load.NewLoader(*grpcAddr, *rps, *duration)
+	loader := load.NewLoader(*grpcAddr, *rps, *duration, *userIdsNum)
 
 	loader.Load()
 

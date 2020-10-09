@@ -14,18 +14,20 @@ import (
 )
 
 type Loader struct {
-	grpcAddr string
-	rps      int
-	duration time.Duration
-	stats    stats.Stats
+	grpcAddr   string
+	rps        int
+	duration   time.Duration
+	userIdsNum int
+	stats      stats.Stats
 }
 
-func NewLoader(grpcAddr string, rps int, duration time.Duration) Loader {
+func NewLoader(grpcAddr string, rps int, duration time.Duration, userIdsNum int) Loader {
 	return Loader{
-		grpcAddr: grpcAddr,
-		rps:      rps,
-		duration: duration,
-		stats:    stats.New(),
+		grpcAddr:   grpcAddr,
+		rps:        rps,
+		duration:   duration,
+		userIdsNum: userIdsNum,
+		stats:      stats.New(),
 	}
 }
 
@@ -59,7 +61,12 @@ func (l *Loader) Load() {
 	if l.duration == 0 {
 		durationStr = "infinite"
 	}
-	log.WithFields(log.Fields{"duration": durationStr, "rps": l.rps, "tick_every": tick}).Info("start")
+	log.WithFields(log.Fields{
+		"duration":     durationStr,
+		"rps":          l.rps,
+		"tick_every":   tick,
+		"user_ids_num": l.userIdsNum,
+	}).Info("start")
 
 	var waitCh = make(chan struct{})
 
@@ -73,7 +80,7 @@ func (l *Loader) Load() {
 				go func() {
 					start := time.Now()
 					err = publishClient.Send(&pb.PublishRequest{
-						UserId: 10,
+						UserId: rand.Int31n(int32(l.userIdsNum)),
 						GeoLocation: &pb.GeoLocation{
 							Lat:       rand.Float64(),
 							Lng:       rand.Float64(),
