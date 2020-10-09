@@ -5,10 +5,7 @@ import (
 	"github.com/shekhirin/zenly-task/zenly/enricher"
 	"github.com/shekhirin/zenly-task/zenly/feed"
 	weatherService "github.com/shekhirin/zenly-task/zenly/service/weather"
-	"time"
 )
-
-const EnricherTimeout = 100 * time.Millisecond
 
 var DefaultEnrichers = []enricher.Enricher{
 	enricher.NewWeather(weatherService.New()),

@@ -1,5 +1,7 @@
 DOCKER_COMPOSE=docker-compose -p zenly
 
+GRAFANA_URL=http://admin:admin@grafana:3000
+
 .PHOY: protoclean
 protoclean:
 	@find zenly/pb/ -mindepth 1 -delete
@@ -18,7 +20,7 @@ infra-up:
 	@$(DOCKER_COMPOSE) -f docker-infrastructure.yml up -d
 
 .PHONY: infra-up
-infra-down:
+infra-down: grafana-provision
 	@$(DOCKER_COMPOSE) -f docker-infrastructure.yml down
 
 .PHONY: up
@@ -32,3 +34,7 @@ down:
 .PHONY: mockgen
 mockgen:
 	@find ~+ -type f -print0 | xargs -0 grep -l "^//go:generate" | sort -u | xargs -L1 -P $$(nproc) go generate
+
+.PHONY: grafana-provision
+grafana-provision:
+	@docker run --rm --network=zenly_default -v `pwd`/grafana:/home/grafana dwdraju/alpine-curl-jq bash /home/grafana/provision_dashboards.sh $(GRAFANA_URL) /home/grafana/provisioning/dashboards
