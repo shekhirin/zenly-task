@@ -1,0 +1,48 @@
+version: '3'
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.21.0
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - 3000:3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    depends_on:
+      - prometheus
+
+  # Prometheus exporters
+
+  nats-prometheus-exporter:
+    image: synadia/prometheus-nats-exporter:0.6.2
+    ports:
+      - 7777
+    command:
+      - -varz
+      - -connz
+      - -subz
+      - http://nats:8222
+    restart: always
+
+  kafka-prometheus-exporter:
+    image: danielqsj/kafka-exporter:v1.2.0
+    ports:
+      - 9308
+    command:
+      - --kafka.server=kafka:9093
+    restart: always
+
+volumes:
+  prometheus_data:
+  grafana_data:

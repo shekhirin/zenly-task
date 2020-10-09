@@ -29,6 +29,12 @@ services:
       - KAFKA_INTER_BROKER_LISTENER_NAME=CLIENT
     depends_on:
       - zookeeper
+    healthcheck:
+      test:
+        ["CMD", "kafka-topics.sh", "--list", "--zookeeper", "zookeeper:2181"]
+      interval: 30s
+      timeout: 10s
+      retries: 4
 
   nats:
     image: bitnami/nats:2.1.8
@@ -37,43 +43,6 @@ services:
       - 6222
       - 8222
 
-  prometheus:
-    image: prom/prometheus:v2.21.0
-    ports:
-      - 9090:9090
-    volumes:
-      - ./prometheus/:/etc/prometheus/
-      - prometheus_data:/prometheus
-    command:
-      - --config.file=/etc/prometheus/prometheus.yml
-      - --storage.tsdb.path=/prometheus
-    depends_on:
-      - nats-prometheus-exporter
-
-  nats-prometheus-exporter:
-    image: synadia/prometheus-nats-exporter:0.6.2
-    ports:
-      - 7777
-    command:
-      - -varz
-      - -connz
-      - -subz
-      - http://nats:8222
-    depends_on:
-      - nats
-
-  grafana:
-    image: grafana/grafana
-    ports:
-      - 3000:3000
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning/:/etc/grafana/provisioning/
-    depends_on:
-      - prometheus
-
 volumes:
   zookeeper_data:
   kafka_data:
-  prometheus_data:
-  grafana_data:

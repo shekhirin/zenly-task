@@ -20,8 +20,16 @@ infra-up:
 	@$(DOCKER_COMPOSE) -f docker-infrastructure.yml up -d
 
 .PHONY: infra-up
-infra-down: grafana-provision
+infra-down:
 	@$(DOCKER_COMPOSE) -f docker-infrastructure.yml down
+
+.PHONY: monitoring-up
+monitoring-up:
+	@$(DOCKER_COMPOSE) -f docker-monitoring.yml up -d
+
+.PHONY: monitoring-up
+monitoring-down: grafana-provision
+	@$(DOCKER_COMPOSE) -f docker-monitoring.yml down
 
 .PHONY: up
 up:
