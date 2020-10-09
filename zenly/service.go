@@ -26,6 +26,7 @@ func (z *Zenly) Publish(stream pb.Zenly_PublishServer) error {
 				Success: true,
 			})
 		default:
+			log.WithError(err).Error("receive from publish stream")
 			return err
 		}
 
@@ -47,6 +48,9 @@ func (z *Zenly) Publish(stream pb.Zenly_PublishServer) error {
 		}
 
 		busErr := z.bus.Publish(busMessage)
+		if busErr != nil {
+			log.WithError(busErr).Error("publish bus message")
+		}
 
 		feedMessage := &pb.FeedMessage{
 			UserId:       publishRequest.UserId,
@@ -54,7 +58,6 @@ func (z *Zenly) Publish(stream pb.Zenly_PublishServer) error {
 			BusPublished: busErr == nil,
 		}
 
-		// TODO: publish to feed from bus in a separate worker
 		if err := z.feed.Publish(feedMessage); err != nil {
 			log.WithError(err).Error("publish feed message")
 		}
@@ -79,6 +82,7 @@ func (z *Zenly) Subscribe(request *pb.SubscribeRequest, stream pb.Zenly_Subscrib
 			case context.Canceled:
 				return nil
 			default:
+				log.WithError(err).Error("stream context done")
 				return err
 			}
 		case message := <-ch:
@@ -88,6 +92,7 @@ func (z *Zenly) Subscribe(request *pb.SubscribeRequest, stream pb.Zenly_Subscrib
 			}
 
 			if err := stream.Send(subscribeResponse); err != nil {
+				log.WithError(err).Error("send to subscribe stream")
 				return err
 			}
 		}
