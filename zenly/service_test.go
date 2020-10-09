@@ -6,6 +6,7 @@ import (
 	busMocks "github.com/shekhirin/zenly-task/zenly/bus/mocks"
 	"github.com/shekhirin/zenly-task/zenly/enricher"
 	enricherMocks "github.com/shekhirin/zenly-task/zenly/enricher/mocks"
+	feedMocks "github.com/shekhirin/zenly-task/zenly/feed/mocks"
 	"github.com/shekhirin/zenly-task/zenly/pb"
 	pbEnricher "github.com/shekhirin/zenly-task/zenly/pb/enricher"
 	pbMocks "github.com/shekhirin/zenly-task/zenly/pb/mocks"
@@ -19,7 +20,6 @@ func TestZenly_Publish(t *testing.T) {
 	defer ctrl.Finish()
 
 	stream := pbMocks.NewMockZenly_PublishServer(ctrl)
-
 	stream.EXPECT().
 		Recv().
 		Return(&pb.PublishRequest{
@@ -29,22 +29,18 @@ func TestZenly_Publish(t *testing.T) {
 				Lng: 3.3,
 			},
 		}, nil)
-
 	stream.EXPECT().
 		Recv().
 		Return(nil, io.EOF)
-
 	stream.EXPECT().
 		SendAndClose(&pb.PublishResponse{Success: true}).
 		Return(nil)
 
 	mockEnricher := enricherMocks.NewMockEnricher(ctrl)
-
 	mockEnricher.EXPECT().
 		String().
 		Return("mock").
 		AnyTimes()
-
 	mockEnricher.EXPECT().
 		Enrich(enricher.Payload{
 			UserId: 1,
@@ -58,7 +54,6 @@ func TestZenly_Publish(t *testing.T) {
 		})
 
 	bus := busMocks.NewMockBus(ctrl)
-
 	bus.EXPECT().
 		Publish(&pb.BusMessage{
 			UserId: 1,
@@ -73,7 +68,23 @@ func TestZenly_Publish(t *testing.T) {
 			},
 		})
 
-	zenly := New(bus, []enricher.Enricher{mockEnricher})
+	feed := feedMocks.NewMockFeed(ctrl)
+	feed.EXPECT().
+		Publish(&pb.FeedMessage{
+			UserId: 1,
+			GeoLocation: &pb.GeoLocationEnriched{
+				GeoLocation: &pb.GeoLocation{
+					Lat: 2.2,
+					Lng: 3.3,
+				},
+				Weather: &pbEnricher.Weather{
+					Temperature: 6.9,
+				},
+			},
+			BusPublished: true,
+		})
+
+	zenly := New(bus, feed, []enricher.Enricher{mockEnricher})
 
 	assert.NoError(t, zenly.Publish(stream))
 }
@@ -82,14 +93,9 @@ func TestZenly_Subscribe(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	bus := busMocks.NewMockBus(ctrl)
 	busCtx, busCtxCancel := context.WithCancel(context.Background())
+
 	busCh := make(chan *pb.BusMessage, 1)
-
-	bus.EXPECT().
-		Subscribe([]int32{1}).
-		Return(busCh, busCtxCancel, nil)
-
 	busCh <- &pb.BusMessage{
 		UserId: 1,
 		GeoLocation: &pb.GeoLocationEnriched{
@@ -103,9 +109,14 @@ func TestZenly_Subscribe(t *testing.T) {
 		},
 	}
 
-	stream := pbMocks.NewMockZenly_SubscribeServer(ctrl)
+	bus := busMocks.NewMockBus(ctrl)
+	bus.EXPECT().
+		Subscribe([]int32{1}).
+		Return(busCh, busCtxCancel, nil)
+
 	streamCtx, streamCtxCancel := context.WithCancel(context.Background())
 
+	stream := pbMocks.NewMockZenly_SubscribeServer(ctrl)
 	stream.EXPECT().
 		Send(&pb.SubscribeResponse{
 			UserId: 1,
@@ -123,17 +134,18 @@ func TestZenly_Subscribe(t *testing.T) {
 		Do(func(*pb.SubscribeResponse) {
 			streamCtxCancel()
 		})
-
 	stream.EXPECT().
 		Context().
 		Return(streamCtx).
 		AnyTimes()
 
+	feed := feedMocks.NewMockFeed(ctrl)
+
 	request := &pb.SubscribeRequest{
 		UserId: []int32{1},
 	}
 
-	zenly := New(bus, []enricher.Enricher{})
+	zenly := New(bus, feed, []enricher.Enricher{})
 
 	assert.NoError(t, zenly.Subscribe(request, stream))
 	assert.Equal(t, context.Canceled, busCtx.Err())

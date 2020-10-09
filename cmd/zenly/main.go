@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/Shopify/sarama"
 	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
@@ -10,9 +11,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shekhirin/zenly-task/zenly"
 	natsBus "github.com/shekhirin/zenly-task/zenly/bus/nats"
+	kafkaFeed "github.com/shekhirin/zenly-task/zenly/feed/kafka"
 	"github.com/shekhirin/zenly-task/zenly/pb"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/benchmark/flags"
 	"net"
 	"net/http"
 )
@@ -23,6 +26,8 @@ var (
 	diagnosticsAddr = flag.String("diagnostics-addr", ":7777", "Diagnostics addr")
 	natsAddr        = flag.String("nats-addr", ":4222", "NATS addr")
 	busSubject      = flag.String("bus-subject", "zenly", "Bus subject")
+	kafkaBrokers    = flags.StringSlice("kafka-brokers", []string{":9092"}, "Kafka brokers (comma separated list)")
+	kafkaTopic      = flag.String("kafka-topic", "feed", "Kafka topic")
 )
 
 var logEntry = log.NewEntry(log.StandardLogger())
@@ -58,7 +63,14 @@ func main() {
 
 	bus := natsBus.New(natsConn, *busSubject)
 
-	zenlyService := zenly.New(bus, zenly.DefaultEnrichers).Service()
+	kafkaProducer, err := sarama.NewAsyncProducer(*kafkaBrokers, sarama.NewConfig())
+	if err != nil {
+		log.WithError(err).Fatalf("connect to kafkaProducer on %+v", *kafkaBrokers)
+	}
+
+	feed := kafkaFeed.New(kafkaProducer, *kafkaTopic)
+
+	zenlyService := zenly.New(bus, feed, zenly.DefaultEnrichers).Service()
 
 	pb.RegisterZenlyService(grpcServer, zenlyService)
 

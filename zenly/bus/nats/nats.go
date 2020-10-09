@@ -33,12 +33,7 @@ func (bus natsBus) Subscribe(userIds []int32) (<-chan *pb.BusMessage, context.Ca
 	ch := make(chan *pb.BusMessage)
 	ctx, cancel := context.WithCancel(context.Background())
 
-	var userIdsMapping = make(map[int32]bool)
-	for _, userId := range userIds {
-		userIdsMapping[userId] = true
-	}
-
-	sub, err := bus.nats.Subscribe(bus.subject, bus.MessageHandler(userIdsMapping, ch))
+	sub, err := bus.nats.Subscribe(bus.subject, bus.MessageHandler(userIds, ch))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -54,9 +49,14 @@ func (bus natsBus) Subscribe(userIds []int32) (<-chan *pb.BusMessage, context.Ca
 }
 
 func (bus natsBus) MessageHandler(
-	userIdsMapping map[int32]bool,
+	userIds []int32,
 	ch chan<- *pb.BusMessage,
 ) nats.MsgHandler {
+	var userIdsMapping = make(map[int32]bool)
+	for _, userId := range userIds {
+		userIdsMapping[userId] = true
+	}
+
 	return func(msg *nats.Msg) {
 		var message pb.BusMessage
 		if err := proto.Unmarshal(msg.Data, &message); err != nil {

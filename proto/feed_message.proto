@@ -1,0 +1,12 @@
+syntax = "proto3";
+option go_package = "github.com/shekhirin/zenly-task/zenly/pb";
+
+package proto;
+
+import "geo_location.proto";
+
+message FeedMessage {
+  int32 user_id = 1;
+  GeoLocationEnriched geo_location = 2;
+  bool bus_published = 3;
+}

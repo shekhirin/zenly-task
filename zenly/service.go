@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/shekhirin/zenly-task/zenly/enricher"
 	"github.com/shekhirin/zenly-task/zenly/pb"
+	log "github.com/sirupsen/logrus"
 	"io"
 )
 
@@ -40,13 +41,26 @@ func (z *Zenly) Publish(stream pb.Zenly_PublishServer) error {
 
 		z.Enrich(payload, geoLocationEnriched)
 
-		message := &pb.BusMessage{
+		busMessage := &pb.BusMessage{
 			UserId:      publishRequest.UserId,
 			GeoLocation: geoLocationEnriched,
 		}
 
-		if err := z.bus.Publish(message); err != nil {
-			return err
+		busErr := z.bus.Publish(busMessage)
+
+		feedMessage := &pb.FeedMessage{
+			UserId:       publishRequest.UserId,
+			GeoLocation:  geoLocationEnriched,
+			BusPublished: busErr == nil,
+		}
+
+		// TODO: publish to feed from bus in a separate worker
+		if err := z.feed.Publish(feedMessage); err != nil {
+			log.WithError(err).Error("publish feed message")
+		}
+
+		if busErr != nil {
+			return busErr
 		}
 	}
 }
