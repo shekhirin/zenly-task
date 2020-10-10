@@ -4,51 +4,49 @@ import (
 	"fmt"
 	"github.com/nats-io/nats.go"
 	"go.uber.org/multierr"
+	"sync"
 )
 
-type SubscribeUnsubscribe interface {
-	Subscribe(subject string, cb nats.MsgHandler) error
-	SubscribeMany(subjects []string, cb nats.MsgHandler) error
-	Unsubscribe() error
+type MultiSub interface {
+	Subscribe(cb nats.MsgHandler, subject ...string) error
+	UnsubscribeAll() error
 }
 
 type multiSub struct {
+	mu          sync.Mutex
 	nats        *nats.Conn
 	rootSubject string
 	subs        []*nats.Subscription
 }
 
-func New(nats *nats.Conn, rootSubject string) SubscribeUnsubscribe {
+func New(nats *nats.Conn, rootSubject string) MultiSub {
 	return &multiSub{
 		nats:        nats,
 		rootSubject: rootSubject,
 	}
 }
 
-func (ms *multiSub) Subscribe(subject string, cb nats.MsgHandler) error {
-	sub, err := ms.nats.Subscribe(fmt.Sprintf("%s.%s", ms.rootSubject, subject), cb)
-	if err != nil {
-		return err
-	}
+func (ms *multiSub) Subscribe(cb nats.MsgHandler, subjects ...string) error {
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
 
-	ms.subs = append(ms.subs, sub)
-
-	return nil
-}
-
-func (ms *multiSub) SubscribeMany(subjects []string, cb nats.MsgHandler) error {
-	for _, subj := range subjects {
-		err := ms.Subscribe(subj, cb)
+	for _, subject := range subjects {
+		sub, err := ms.nats.Subscribe(fmt.Sprintf("%s.%s", ms.rootSubject, subject), cb)
 		if err != nil {
-			_ = ms.Unsubscribe()
+			_ = ms.UnsubscribeAll()
 			return err
 		}
+
+		ms.subs = append(ms.subs, sub)
 	}
 
 	return nil
 }
 
-func (ms *multiSub) Unsubscribe() error {
+func (ms *multiSub) UnsubscribeAll() error {
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
+
 	var err error
 
 	var subs = make([]*nats.Subscription, 0)

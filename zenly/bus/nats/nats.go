@@ -40,7 +40,7 @@ func (bus natsBus) Subscribe(userIds []int32) (<-chan *pb.BusMessage, context.Ca
 	go func() {
 		select {
 		case <-ctx.Done():
-			_ = sub.Unsubscribe()
+			_ = sub.UnsubscribeAll()
 		}
 	}()
 
@@ -49,7 +49,7 @@ func (bus natsBus) Subscribe(userIds []int32) (<-chan *pb.BusMessage, context.Ca
 		subjects = append(subjects, strconv.Itoa(int(userId)))
 	}
 
-	if err := sub.SubscribeMany(subjects, bus.MessageHandler(ch)); err != nil {
+	if err := sub.Subscribe(bus.MessageHandler(ch), subjects...); err != nil {
 		return nil, nil, err
 	}
 
