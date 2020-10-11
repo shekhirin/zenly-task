@@ -46,3 +46,7 @@ mockgen:
 .PHONY: grafana-provision
 grafana-provision:
 	@docker run --rm --network=zenly_default -v `pwd`/grafana:/home/grafana dwdraju/alpine-curl-jq bash /home/grafana/provision_dashboards.sh $(GRAFANA_URL) /home/grafana/provisioning/dashboards
+
+.PHONY: pumlgen
+pumlgen:
+	@plantuml diagrams/*.puml

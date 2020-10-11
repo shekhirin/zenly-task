@@ -1,0 +1,66 @@
+@startuml
+
+rectangle "Users" as users {
+    actor publisher
+    actor subscriber
+}
+
+cloud "Zenly" as zenly {
+    rectangle "gRPC Service" as zenly_grpc_service {
+        node "publish stream" as publish_stream
+        node "subscribe stream" as subscribe_stream
+    }
+
+    rectangle "Metrics" as zenly_metrics {
+        storage "local prometheus storage" as local_prometheus_storage
+        node promhttp
+    }
+
+    rectangle "Enriching" as zenly_enriching {
+        collections enrichers
+        collections services
+    }
+}
+
+storage "Monitoring" as monitoring {
+    cloud grafana
+    database prometheus
+
+    rectangle "Prometheus Exporters" as prometheus_exporters {
+        node "nats exporter" as nats_prometheus_exporter
+        node "kafka exporter" as kafka_prometheus_exporter
+    }
+}
+
+storage "Data" as data {
+    queue kafka
+    queue nats
+}
+
+'zenly
+publisher -> publish_stream: grpc
+subscriber <- subscribe_stream: grpc
+zenly_enriching <-> publish_stream
+publish_stream -> nats
+zenly_enriching -> local_prometheus_storage: enriching metrics
+kafka <- publish_stream
+
+'metrics
+promhttp -> local_prometheus_storage
+enrichers -> local_prometheus_storage: enricher metrics
+services <-> enrichers
+subscribe_stream <- nats
+
+'monitoring
+grafana -> prometheus
+prometheus --> prometheus_exporters: scrapes
+promhttp <-- prometheus: scrapes
+nats <- nats_prometheus_exporter
+kafka <- kafka_prometheus_exporter
+
+'layout
+users -[hidden]- zenly
+zenly_enriching -[hidden]- zenly_metrics
+zenly_grpc_service --[hidden]- data
+
+@enduml
