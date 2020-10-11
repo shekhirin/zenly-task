@@ -14,14 +14,12 @@ import (
 type natsBus struct {
 	nats    *nats.Conn
 	subject string
-	queue   string
 }
 
-func New(natsConn *nats.Conn, subject string, queue string) bus.Bus {
+func New(natsConn *nats.Conn, subject string) bus.Bus {
 	return &natsBus{
 		nats:    natsConn,
 		subject: subject,
-		queue:   queue,
 	}
 }
 
@@ -38,7 +36,7 @@ func (bus natsBus) Subscribe(userIds []int32) (<-chan *pb.BusMessage, context.Ca
 	ch := make(chan *pb.BusMessage)
 	ctx, cancel := context.WithCancel(context.Background())
 
-	sub := multisub.New(bus.nats, bus.subject, bus.queue)
+	sub := multisub.New(bus.nats, bus.subject)
 	go func() {
 		select {
 		case <-ctx.Done():
