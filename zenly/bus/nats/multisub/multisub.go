@@ -16,13 +16,15 @@ type multiSub struct {
 	mu          sync.Mutex
 	nats        *nats.Conn
 	rootSubject string
+	queue       string
 	subs        []*nats.Subscription
 }
 
-func New(nats *nats.Conn, rootSubject string) MultiSub {
+func New(nats *nats.Conn, rootSubject string, queue string) MultiSub {
 	return &multiSub{
 		nats:        nats,
 		rootSubject: rootSubject,
+		queue:       queue,
 	}
 }
 
@@ -31,7 +33,7 @@ func (ms *multiSub) Subscribe(cb nats.MsgHandler, subjects ...string) error {
 	defer ms.mu.Unlock()
 
 	for _, subject := range subjects {
-		sub, err := ms.nats.Subscribe(fmt.Sprintf("%s.%s", ms.rootSubject, subject), cb)
+		sub, err := ms.nats.QueueSubscribe(fmt.Sprintf("%s.%s", ms.rootSubject, subject), ms.queue, cb)
 		if err != nil {
 			_ = ms.UnsubscribeAll()
 			return err

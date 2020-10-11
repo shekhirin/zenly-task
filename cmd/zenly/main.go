@@ -26,6 +26,7 @@ var (
 	diagnosticsAddr = flag.String("diagnostics-addr", ":7777", "Diagnostics addr")
 	natsAddr        = flag.String("nats-addr", ":4222", "NATS addr")
 	natsSubject     = flag.String("nats-subject", "zenly", "NATS subject")
+	natsQueue       = flag.String("nats-queue", "grpc-subscribe", "NATS queue")
 	kafkaBrokers    = flags.StringSlice("kafka-brokers", []string{":9092"}, "Kafka brokers (comma separated list)")
 	kafkaTopic      = flag.String("kafka-topic", "feed", "Kafka topic")
 )
@@ -61,7 +62,7 @@ func main() {
 		log.WithError(err).Fatalf("connect to NATS on %s", *natsAddr)
 	}
 
-	bus := natsBus.New(natsConn, *natsSubject)
+	bus := natsBus.New(natsConn, *natsSubject, *natsQueue)
 
 	kafkaProducer, err := sarama.NewAsyncProducer(*kafkaBrokers, sarama.NewConfig())
 	if err != nil {
