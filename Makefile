@@ -2,7 +2,7 @@ DOCKER_COMPOSE=docker-compose -p zenly
 
 GRAFANA_URL=http://admin:admin@grafana:3000
 
-.PHOY: protoclean
+.PHONY: protoclean
 protoclean:
 	@find zenly/pb/ -mindepth 1 ! -path '*/mocks/*' -a ! -name "generate.go" -delete
 
@@ -19,25 +19,32 @@ protogen: protoclean
 infra-up:
 	@$(DOCKER_COMPOSE) -f docker-infrastructure.yml up -d
 
-.PHONY: infra-up
+.PHONY: infra-down
 infra-down:
-	@$(DOCKER_COMPOSE) -f docker-infrastructure.yml down
+	$(DOCKER_COMPOSE) -f docker-infrastructure.yml down
 
 .PHONY: monitoring-up
 monitoring-up:
 	@$(DOCKER_COMPOSE) -f docker-monitoring.yml up -d
 
-.PHONY: monitoring-up
+.PHONY: monitoring-down
 monitoring-down: grafana-provision
-	@$(DOCKER_COMPOSE) -f docker-monitoring.yml down
+	$(DOCKER_COMPOSE) -f docker-monitoring.yml down
+
+.PHONY: app-up
+app-up:
+	@$(DOCKER_COMPOSE) -f docker-compose.yml up --build -d
+
+.PHONY: app-down
+app-down:
+	$(DOCKER_COMPOSE) -f docker-compose.yml down
 
 .PHONY: up
-up:
-	@$(DOCKER_COMPOSE) -f docker-compose.yml up --build -d
+up: infra-up monitoring-up app-up
 
 .PHONY: down
 down:
-	@$(DOCKER_COMPOSE) -f docker-compose.yml down
+	$(DOCKER_COMPOSE) -f docker-infrastructure.yml -f docker-monitoring.yml -f docker-compose.yml down
 
 .PHONY: mockgen
 mockgen:
