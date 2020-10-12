@@ -34,7 +34,7 @@ func (ms *multiSub) Subscribe(cb nats.MsgHandler, subjects ...string) error {
 		sub, err := ms.nats.Subscribe(fmt.Sprintf("%s.%s", ms.rootSubject, subject), cb)
 		if err != nil {
 			_ = ms.UnsubscribeAll()
-			return err
+			return fmt.Errorf("subscribe to subject \"%s\": %w", subject, err)
 		}
 
 		ms.subs = append(ms.subs, sub)

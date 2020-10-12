@@ -71,6 +71,7 @@ func (z *Zenly) Publish(stream pb.Zenly_PublishServer) error {
 func (z *Zenly) Subscribe(request *pb.SubscribeRequest, stream pb.Zenly_SubscribeServer) error {
 	ch, cancel, err := z.bus.Subscribe(request.UserId)
 	if err != nil {
+		log.WithError(err).WithField("user_ids", request.UserId).Error("subscribe to bus")
 		return err
 	}
 	defer cancel()

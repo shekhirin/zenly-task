@@ -8,6 +8,7 @@ import (
 	"github.com/shekhirin/zenly-task/zenly/bus"
 	"github.com/shekhirin/zenly-task/zenly/bus/nats/multisub"
 	"github.com/shekhirin/zenly-task/zenly/pb"
+	log "github.com/sirupsen/logrus"
 	"strconv"
 )
 
@@ -26,7 +27,7 @@ func New(natsConn *nats.Conn, subject string) bus.Bus {
 func (bus natsBus) Publish(message *pb.BusMessage) error {
 	data, err := proto.Marshal(message)
 	if err != nil {
-		return err
+		return fmt.Errorf("marshal message to proto: %w", err)
 	}
 
 	return bus.nats.Publish(fmt.Sprintf("%s.%d", bus.subject, message.UserId), data)
@@ -62,6 +63,7 @@ func (bus natsBus) MessageHandler(
 	return func(msg *nats.Msg) {
 		var message pb.BusMessage
 		if err := proto.Unmarshal(msg.Data, &message); err != nil {
+			log.WithError(err).Error("unmarshal proto to bus message")
 			return
 		}
 

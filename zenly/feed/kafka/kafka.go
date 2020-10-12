@@ -1,6 +1,7 @@
 package kafka
 
 import (
+	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/golang/protobuf/proto"
 	"github.com/shekhirin/zenly-task/zenly/feed"
@@ -29,7 +30,7 @@ func New(producer sarama.AsyncProducer, topic string) feed.Feed {
 func (feed kafkaFeed) Publish(message *pb.FeedMessage) error {
 	data, err := proto.Marshal(message)
 	if err != nil {
-		return err
+		return fmt.Errorf("marshal message to proto: %w", err)
 	}
 
 	feed.producer.Input() <- &sarama.ProducerMessage{
