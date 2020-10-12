@@ -24,7 +24,7 @@ var (
 	env             = flag.String("env", "debug", "App environment")
 	addr            = flag.String("addr", ":8080", "Server addr")
 	diagnosticsAddr = flag.String("diagnostics-addr", ":7777", "Diagnostics addr")
-	natsAddr        = flag.String("nats-addr", ":4222", "NATS addr")
+	natsServers     = flag.String("nats-servers", ":4222", "NATS servers (comma separated list)")
 	natsSubject     = flag.String("nats-subject", "zenly", "NATS subject")
 	kafkaBrokers    = flags.StringSlice("kafka-brokers", []string{":9092"}, "Kafka brokers (comma separated list)")
 	kafkaTopic      = flag.String("kafka-topic", "feed", "Kafka topic")
@@ -56,9 +56,9 @@ func main() {
 		)),
 	)
 
-	natsConn, err := nats.Connect(*natsAddr)
+	natsConn, err := nats.Connect(*natsServers)
 	if err != nil {
-		log.WithError(err).Fatalf("connect to NATS on %s", *natsAddr)
+		log.WithError(err).Fatalf("connect to NATS on %+v", *natsServers)
 	}
 
 	bus := natsBus.New(natsConn, *natsSubject)
