@@ -2,7 +2,7 @@ package bus
 
 import (
 	"context"
-	"github.com/shekhirin/zenly-task/zenly/pb"
+	"github.com/shekhirin/zenly-task/internal/pb"
 )
 
 type MessageFunc func(message *pb.BusMessage) error

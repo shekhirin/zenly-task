@@ -2,8 +2,8 @@ package zenly
 
 import (
 	"context"
+	"github.com/shekhirin/zenly-task/internal/pb"
 	"github.com/shekhirin/zenly-task/zenly/enricher"
-	"github.com/shekhirin/zenly-task/zenly/pb"
 	log "github.com/sirupsen/logrus"
 	"io"
 )

@@ -2,8 +2,8 @@ package load
 
 import (
 	"context"
+	"github.com/shekhirin/zenly-task/internal/pb"
 	"github.com/shekhirin/zenly-task/load/stats"
-	"github.com/shekhirin/zenly-task/zenly/pb"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"

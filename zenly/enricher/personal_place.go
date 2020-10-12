@@ -1,8 +1,8 @@
 package enricher
 
 import (
-	"github.com/shekhirin/zenly-task/zenly/pb"
-	"github.com/shekhirin/zenly-task/zenly/pb/enricher"
+	"github.com/shekhirin/zenly-task/internal/pb"
+	"github.com/shekhirin/zenly-task/internal/pb/enricher"
 	"math/rand"
 )
 

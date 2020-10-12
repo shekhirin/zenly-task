@@ -1,7 +1,7 @@
 package stats
 
 import (
-	"github.com/shekhirin/zenly-task/zenly/pb"
+	"github.com/shekhirin/zenly-task/internal/pb"
 	"sync"
 	"time"
 )

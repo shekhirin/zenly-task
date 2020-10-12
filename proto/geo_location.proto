@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "github.com/shekhirin/zenly-task/zenly/pb";
+option go_package = "github.com/shekhirin/zenly-task/internal/pb";
 
 package proto;
 

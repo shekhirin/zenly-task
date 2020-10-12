@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/nats-io/nats.go"
+	"github.com/shekhirin/zenly-task/internal/pb"
 	"github.com/shekhirin/zenly-task/zenly/bus"
 	"github.com/shekhirin/zenly-task/zenly/bus/nats/multisub"
-	"github.com/shekhirin/zenly-task/zenly/pb"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 )

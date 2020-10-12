@@ -2,7 +2,7 @@ package enricher
 
 import (
 	"fmt"
-	"github.com/shekhirin/zenly-task/zenly/pb"
+	"github.com/shekhirin/zenly-task/internal/pb"
 	"math/rand"
 	"time"
 )

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/golang/protobuf/proto"
+	"github.com/shekhirin/zenly-task/internal/pb"
 	"github.com/shekhirin/zenly-task/zenly/feed"
-	"github.com/shekhirin/zenly-task/zenly/pb"
 	log "github.com/sirupsen/logrus"
 )
 

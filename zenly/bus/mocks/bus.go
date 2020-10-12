@@ -7,7 +7,7 @@ package mocks
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
-	pb "github.com/shekhirin/zenly-task/zenly/pb"
+	pb "github.com/shekhirin/zenly-task/internal/pb"
 	reflect "reflect"
 )
 

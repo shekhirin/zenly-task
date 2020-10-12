@@ -2,12 +2,12 @@ package zenly
 
 import (
 	"github.com/golang/mock/gomock"
+	"github.com/shekhirin/zenly-task/internal/pb"
+	pbEnricher "github.com/shekhirin/zenly-task/internal/pb/enricher"
 	busMocks "github.com/shekhirin/zenly-task/zenly/bus/mocks"
 	"github.com/shekhirin/zenly-task/zenly/enricher"
 	enricherMocks "github.com/shekhirin/zenly-task/zenly/enricher/mocks"
 	feedMocks "github.com/shekhirin/zenly-task/zenly/feed/mocks"
-	"github.com/shekhirin/zenly-task/zenly/pb"
-	pbEnricher "github.com/shekhirin/zenly-task/zenly/pb/enricher"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
