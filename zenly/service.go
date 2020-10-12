@@ -17,7 +17,7 @@ func (z *Zenly) Service() *pb.ZenlyService {
 
 func (z *Zenly) Publish(stream pb.Zenly_PublishServer) error {
 	for {
-		publishRequest, err := stream.Recv()
+		message, err := stream.Recv()
 		switch err {
 		case nil:
 			break
@@ -31,19 +31,19 @@ func (z *Zenly) Publish(stream pb.Zenly_PublishServer) error {
 		}
 
 		geoLocationEnriched := &pb.GeoLocationEnriched{
-			GeoLocation: publishRequest.GeoLocation,
+			GeoLocation: message.GeoLocation,
 		}
 
 		payload := enricher.Payload{
-			UserId: publishRequest.UserId,
-			Lat:    publishRequest.GeoLocation.Lat,
-			Lng:    publishRequest.GeoLocation.Lng,
+			UserId: message.UserId,
+			Lat:    message.GeoLocation.Lat,
+			Lng:    message.GeoLocation.Lng,
 		}
 
 		z.Enrich(payload, geoLocationEnriched)
 
 		busMessage := &pb.BusMessage{
-			UserId:      publishRequest.UserId,
+			UserId:      message.UserId,
 			GeoLocation: geoLocationEnriched,
 		}
 
@@ -53,7 +53,7 @@ func (z *Zenly) Publish(stream pb.Zenly_PublishServer) error {
 		}
 
 		feedMessage := &pb.FeedMessage{
-			UserId:       publishRequest.UserId,
+			UserId:       message.UserId,
 			GeoLocation:  geoLocationEnriched,
 			BusPublished: busErr == nil,
 		}

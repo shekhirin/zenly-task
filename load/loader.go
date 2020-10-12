@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"io"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -14,20 +15,22 @@ import (
 )
 
 type Loader struct {
-	grpcAddr   string
-	rps        int
-	duration   time.Duration
-	userIdsNum int
-	stats      stats.Stats
+	grpcAddr       string
+	rps            int
+	duration       time.Duration
+	userIdsNum     int
+	publishStats   stats.Publish
+	subscribeStats stats.Subscribe
 }
 
 func NewLoader(grpcAddr string, rps int, duration time.Duration, userIdsNum int) Loader {
 	return Loader{
-		grpcAddr:   grpcAddr,
-		rps:        rps,
-		duration:   duration,
-		userIdsNum: userIdsNum,
-		stats:      stats.New(),
+		grpcAddr:       grpcAddr,
+		rps:            rps,
+		duration:       duration,
+		userIdsNum:     userIdsNum,
+		publishStats:   stats.NewPublish(),
+		subscribeStats: stats.NewSubscribe(),
 	}
 }
 
@@ -48,6 +51,20 @@ func (l *Loader) Load() {
 
 	client := pb.NewZenlyClient(conn)
 
+	publishWaitCh := l.loadPublish(ctx, client)
+	subscribeWaitCh := l.loadSubscribe(ctx, client)
+
+	var signalCh = make(chan os.Signal)
+	signal.Notify(signalCh, os.Interrupt)
+
+	select {
+	case <-signalCh:
+	case <-publishWaitCh:
+	case <-subscribeWaitCh:
+	}
+}
+
+func (l *Loader) loadPublish(ctx context.Context, client pb.ZenlyClient) <-chan struct{} {
 	publishClient, err := client.Publish(ctx)
 	if err != nil {
 		log.WithError(err).Fatal("init publish client")
@@ -55,7 +72,6 @@ func (l *Loader) Load() {
 
 	tick := time.Second / time.Duration(l.rps)
 	timer := time.NewTicker(tick)
-	defer timer.Stop()
 
 	durationStr := l.duration.String()
 	if l.duration == 0 {
@@ -66,7 +82,7 @@ func (l *Loader) Load() {
 		"rps":          l.rps,
 		"tick_every":   tick,
 		"user_ids_num": l.userIdsNum,
-	}).Info("start")
+	}).Info("start publish")
 
 	var waitCh = make(chan struct{})
 
@@ -79,7 +95,7 @@ func (l *Loader) Load() {
 			case <-timer.C:
 				go func() {
 					start := time.Now()
-					err = publishClient.Send(&pb.PublishRequest{
+					err := publishClient.Send(&pb.PublishRequest{
 						UserId: rand.Int31n(int32(l.userIdsNum)),
 						GeoLocation: &pb.GeoLocation{
 							Lat:       rand.Float64(),
@@ -93,27 +109,75 @@ func (l *Loader) Load() {
 						log.WithError(err).Fatal("send publish request")
 					}
 
-					l.stats.Observe(start, finish)
+					l.publishStats.Observe(start, finish)
 				}()
 			}
 		}
 	}()
 
-	var signalCh = make(chan os.Signal)
-	signal.Notify(signalCh, os.Interrupt)
+	return waitCh
+}
 
-	select {
-	case <-signalCh:
-	case <-waitCh:
+func (l *Loader) loadSubscribe(ctx context.Context, client pb.ZenlyClient) <-chan struct{} {
+	var subscribeUserIds []int32
+	for i := 0; i < l.userIdsNum; i++ {
+		subscribeUserIds = append(subscribeUserIds, int32(i))
 	}
+
+	subscribeClient, err := client.Subscribe(ctx, &pb.SubscribeRequest{
+		UserId: subscribeUserIds,
+	})
+	if err != nil {
+		log.WithError(err).Fatal("init subscribe client")
+	}
+
+	log.WithFields(log.Fields{
+		"user_ids": subscribeUserIds,
+	}).Info("start subscribe")
+
+	var waitCh = make(chan struct{})
+
+	go func() {
+		defer close(waitCh)
+		for {
+			select {
+			case <-ctx.Done():
+				err := subscribeClient.CloseSend()
+				if err != nil {
+					log.WithError(err).Fatal("close subscribe stream send direction")
+				}
+			default:
+				message, err := subscribeClient.Recv()
+				received := time.Now()
+				switch err {
+				case nil:
+					break
+				case io.EOF:
+					return
+				default:
+					log.WithError(err).Fatal("receive from subscribe stream")
+				}
+
+				l.subscribeStats.Observe(received, message)
+			}
+		}
+	}()
+
+	return waitCh
 }
 
 func (l *Loader) PrintStats() {
 	log.WithFields(log.Fields{
-		"actual_rps":  l.stats.RPS(),
-		"requests":    l.stats.Requests(),
-		"elapsed_min": l.stats.ElapsedMin,
-		"elapsed_max": l.stats.ElapsedMax,
-		"elapsed_avg": l.stats.ElapsedAverage(),
-	}).Info("complete")
+		"actual_rps":  l.publishStats.RPS(),
+		"requests":    l.publishStats.Requests(),
+		"elapsed_min": l.publishStats.ElapsedMin,
+		"elapsed_max": l.publishStats.ElapsedMax,
+		"elapsed_avg": l.publishStats.ElapsedAverage(),
+	}).Info("publish complete")
+
+	log.WithFields(log.Fields{
+		"messages_per_second": l.subscribeStats.MPS(),
+		"messages":            l.subscribeStats.Messages(),
+		"lag_avg":             l.subscribeStats.LagAverage(),
+	}).Info("subscribe complete")
 }
