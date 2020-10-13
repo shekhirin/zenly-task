@@ -49,7 +49,7 @@ down:
 .PHONY: load
 load:
 	@$(DOCKER_COMPOSE) -f docker-compose.yml build -q
-	@docker run --rm --network=zenly_default zenly_zenly ./load -grpc-addr=zenly:8080
+	@docker run --rm --network=zenly_default zenly_zenly ./load -grpc-addr=zenly:8080 -duration=0
 
 .PHONY: mockgen
 mockgen:

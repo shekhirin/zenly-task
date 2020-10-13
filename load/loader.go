@@ -18,17 +18,17 @@ type Loader struct {
 	grpcAddr       string
 	rps            int
 	duration       time.Duration
-	userIdsNum     int
+	users          int
 	publishStats   stats.Publish
 	subscribeStats stats.Subscribe
 }
 
-func NewLoader(grpcAddr string, rps int, duration time.Duration, userIdsNum int) Loader {
+func NewLoader(grpcAddr string, rps int, duration time.Duration, users int) Loader {
 	return Loader{
 		grpcAddr:       grpcAddr,
 		rps:            rps,
 		duration:       duration,
-		userIdsNum:     userIdsNum,
+		users:          users,
 		publishStats:   stats.NewPublish(),
 		subscribeStats: stats.NewSubscribe(),
 	}
@@ -78,10 +78,10 @@ func (l *Loader) loadPublish(ctx context.Context, client pb.ZenlyClient) <-chan 
 		durationStr = "infinite"
 	}
 	log.WithFields(log.Fields{
-		"duration":     durationStr,
-		"rps":          l.rps,
-		"tick_every":   tick,
-		"user_ids_num": l.userIdsNum,
+		"duration":   durationStr,
+		"rps":        l.rps,
+		"tick_every": tick,
+		"users":      l.users,
 	}).Info("start publish")
 
 	var waitCh = make(chan struct{})
@@ -96,7 +96,7 @@ func (l *Loader) loadPublish(ctx context.Context, client pb.ZenlyClient) <-chan 
 				go func() {
 					start := time.Now()
 					err := publishClient.Send(&pb.PublishRequest{
-						UserId: rand.Int31n(int32(l.userIdsNum)),
+						UserId: rand.Int31n(int32(l.users)),
 						GeoLocation: &pb.GeoLocation{
 							Lat:       rand.Float64(),
 							Lng:       rand.Float64(),
@@ -119,49 +119,66 @@ func (l *Loader) loadPublish(ctx context.Context, client pb.ZenlyClient) <-chan 
 }
 
 func (l *Loader) loadSubscribe(ctx context.Context, client pb.ZenlyClient) <-chan struct{} {
-	var subscribeUserIds []int32
-	for i := 0; i < l.userIdsNum; i++ {
-		subscribeUserIds = append(subscribeUserIds, int32(i))
-	}
-
-	subscribeClient, err := client.Subscribe(ctx, &pb.SubscribeRequest{
-		UserId: subscribeUserIds,
-	})
-	if err != nil {
-		log.WithError(err).Fatal("init subscribe client")
-	}
-
-	log.WithFields(log.Fields{
-		"user_ids": subscribeUserIds,
-	}).Info("start subscribe")
-
 	var waitCh = make(chan struct{})
 
+	var usersCh = make(chan struct{}, l.users)
 	go func() {
-		defer close(waitCh)
-		for {
-			select {
-			case <-ctx.Done():
-				err := subscribeClient.CloseSend()
-				if err != nil {
-					log.WithError(err).Fatal("close subscribe stream send direction")
-				}
-			default:
-				message, err := subscribeClient.Recv()
-				received := time.Now()
-				switch err {
-				case nil:
-					break
-				case io.EOF:
-					return
-				default:
-					log.WithError(err).Fatal("receive from subscribe stream")
-				}
-
-				l.subscribeStats.Observe(received, message)
-			}
-		}
+		waitCh <- <-usersCh
 	}()
+
+	for userId := 0; userId < l.users; userId++ {
+		var subscribeUserIds []int32
+		for i := 0; i < l.users; i++ {
+			if i == userId {
+				continue
+			}
+			subscribeUserIds = append(subscribeUserIds, int32(i))
+		}
+
+		subscribeClient, err := client.Subscribe(ctx, &pb.SubscribeRequest{
+			UserId: subscribeUserIds,
+		})
+		if err != nil {
+			log.WithError(err).Fatal("init subscribe client")
+		}
+
+		log.WithFields(log.Fields{
+			"user_id":  userId,
+			"user_ids": subscribeUserIds,
+		}).Info("start subscribe")
+
+		go func() {
+			defer func() {
+				usersCh <-struct{}{}
+			}()
+			for {
+				select {
+				case <-ctx.Done():
+					err := subscribeClient.CloseSend()
+					if err != nil {
+						log.WithError(err).Fatal("close subscribe stream send direction")
+					}
+				default:
+					message, err := subscribeClient.Recv()
+					received := time.Now()
+					switch err {
+					case nil:
+						break
+					case io.EOF:
+						return
+					default:
+						if err == context.DeadlineExceeded && ctx.Err() == context.Canceled {
+							return
+						}
+
+						log.WithError(err).Fatal("receive from subscribe stream")
+					}
+
+					l.subscribeStats.Observe(received, message)
+				}
+			}
+		}()
+	}
 
 	return waitCh
 }
