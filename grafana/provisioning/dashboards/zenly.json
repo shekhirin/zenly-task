@@ -16,7 +16,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 3,
-  "iteration": 1602226678307,
+  "iteration": 1602523335601,
   "links": [],
   "panels": [
     {
@@ -79,7 +79,7 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Enrich timeouts",
+      "title": "Enrich Timeouts",
       "transparent": true,
       "type": "gauge"
     },
@@ -170,7 +170,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Enrich time heatmap",
+      "title": "Enrich Time Heatmap",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -197,6 +197,116 @@
         },
         {
           "$$hashKey": "object:365",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "hiddenSeries": false,
+      "id": 12,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.2.0",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "$$hashKey": "object:100",
+          "alias": "Out",
+          "yaxis": 2
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(rate(gnatsd_varz_in_msgs[$interval]))",
+          "interval": "",
+          "legendFormat": "In",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(gnatsd_varz_out_msgs[$interval]))",
+          "interval": "",
+          "legendFormat": "Out",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "NATS Messages",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "transparent": true,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:72",
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:73",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -243,7 +353,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 9
+        "y": 18
       },
       "id": 10,
       "maxPerRow": 6,
@@ -280,7 +390,7 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "\"$enricher\" timeouts",
+      "title": "Enricher \"$enricher\" Timeouts",
       "transparent": true,
       "type": "gauge"
     },
@@ -317,9 +427,10 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 9
+        "y": 18
       },
-      "id": 11,
+      "id": 13,
+      "maxPerRow": 6,
       "options": {
         "orientation": "auto",
         "reduceOptions": {
@@ -334,7 +445,7 @@
       },
       "pluginVersion": "7.2.0",
       "repeatDirection": "h",
-      "repeatIteration": 1602226678307,
+      "repeatIteration": 1602523335601,
       "repeatPanelId": 10,
       "scopedVars": {
         "enricher": {
@@ -354,7 +465,7 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "\"$enricher\" timeouts",
+      "title": "Enricher \"$enricher\" Timeouts",
       "transparent": true,
       "type": "gauge"
     },
@@ -391,9 +502,10 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 9
+        "y": 18
       },
-      "id": 12,
+      "id": 14,
+      "maxPerRow": 6,
       "options": {
         "orientation": "auto",
         "reduceOptions": {
@@ -408,7 +520,7 @@
       },
       "pluginVersion": "7.2.0",
       "repeatDirection": "h",
-      "repeatIteration": 1602226678307,
+      "repeatIteration": 1602523335601,
       "repeatPanelId": 10,
       "scopedVars": {
         "enricher": {
@@ -428,7 +540,7 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "\"$enricher\" timeouts",
+      "title": "Enricher \"$enricher\" Timeouts",
       "transparent": true,
       "type": "gauge"
     }
@@ -597,5 +709,5 @@
   "timezone": "",
   "title": "Zenly",
   "uid": "fuvi6pFMz",
-  "version": 29
+  "version": 33
 }

@@ -82,3 +82,15 @@ more throughput and less downtime, then each server in a cluster should be added
 - Enriching process reports each enricher's time with result (in time / timeout) and
 total enriching time with finish reason (complete / timeout)
 - Grafana lives at http://localhost:3000/ with username `admin` and password `admin`
+
+## Time to Check It Works!
+1. Start infrastructure, monitoring and application
+    ```
+    make up
+    ```
+1. Generate infinite load with 10 RPS for 1 publish stream for 10 users and listen on 10 subscribe streams
+    ```
+    make load
+    ```
+1. Head to http://localhost:3000 with `admin:admin`, find `Zenly` dashboard in search and see graphs are filling with data
+1. Stop loader with Ctrl-C and see stats printed out
